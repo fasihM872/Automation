@@ -1,0 +1,116 @@
+"""Sending channels: EmailSender (SMTP) and WhatsAppSender (Twilio, optional)."""
+import os
+import re
+import smtplib
+import ssl
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+
+def normalize_phone(raw, default_cc):
+    """
+    Best-effort conversion of a local number to E.164 (+<country><number>).
+    Heuristic — verify a few results against your real data before a big run.
+    """
+    if not raw:
+        return None
+    s = str(raw).strip()
+    if s.startswith("+"):
+        digits = re.sub(r"\D", "", s)
+        return "+" + digits if len(digits) >= 8 else None
+    digits = re.sub(r"\D", "", s)
+    if not digits:
+        return None
+    if digits.startswith("00"):
+        digits = digits[2:]
+    elif digits.startswith("0"):
+        digits = default_cc + digits[1:]
+    elif not digits.startswith(default_cc):
+        digits = default_cc + digits
+    return "+" + digits if len(digits) >= 8 else None
+
+
+class EmailSender:
+    """Opens one SMTP connection for the whole run (use as a context manager)."""
+
+    def __init__(self, host, port, username, password, sender_name, sender_email, reply_to=None):
+        if not host or not username or not password:
+            raise RuntimeError("SMTP not configured. Fill SMTP_HOST / SMTP_USERNAME / SMTP_PASSWORD in .env")
+        self.host, self.port = host, int(port)
+        self.username, self.password = username, password
+        self.sender_name, self.sender_email = sender_name, sender_email
+        self.reply_to = reply_to or sender_email
+        self._server = None
+
+    def __enter__(self):
+        self._server = smtplib.SMTP(self.host, self.port, timeout=30)
+        self._server.starttls(context=ssl.create_default_context())
+        self._server.login(self.username, self.password)
+        return self
+
+    def __exit__(self, *exc):
+        if self._server:
+            try:
+                self._server.quit()
+            finally:
+                self._server = None
+
+    @staticmethod
+    def _attach_inline_images(root, inline_images):
+        for cid, path in inline_images:
+            ext = os.path.splitext(path)[1].lower().lstrip(".")
+            subtype = {"jpg": "jpeg"}.get(ext, ext) or "png"
+            with open(path, "rb") as fh:
+                img = MIMEImage(fh.read(), _subtype=subtype)
+            img.add_header("Content-ID", f"<{cid}>")
+            img.add_header("Content-Disposition", "inline", filename=os.path.basename(path))
+            root.attach(img)
+
+    def send(self, to_email, subject, html_body, text_body, inline_images=None):
+        inline_images = inline_images or []
+
+        # text + html alternatives
+        alternative = MIMEMultipart("alternative")
+        alternative.attach(MIMEText(text_body, "plain", "utf-8"))
+        alternative.attach(MIMEText(html_body, "html", "utf-8"))
+
+        if inline_images:
+            # multipart/related wraps the alternative part plus the embedded images
+            msg = MIMEMultipart("related")
+            msg.attach(alternative)
+            self._attach_inline_images(msg, inline_images)
+        else:
+            msg = alternative
+
+        msg["Subject"] = subject
+        msg["From"] = f"{self.sender_name} <{self.sender_email}>"
+        msg["To"] = to_email
+        msg["Reply-To"] = self.reply_to
+        self._server.sendmail(self.sender_email, [to_email], msg.as_string())
+
+
+class WhatsAppSender:
+    """
+    Sends WhatsApp messages through Twilio's API. Optional — only created if the
+    TWILIO_* values are set in .env. See the README for the setup + template-approval rules.
+    """
+
+    def __init__(self, account_sid, auth_token, from_number, default_cc):
+        self.from_number = from_number          # e.g. "whatsapp:+14155238886"
+        self.default_cc = default_cc
+        try:
+            from twilio.rest import Client
+        except ImportError as e:
+            raise RuntimeError("The 'twilio' package is not installed. Run: pip install twilio") from e
+        self._client = Client(account_sid, auth_token)
+
+    def send(self, to_phone_raw, body, media_url=None):
+        number = normalize_phone(to_phone_raw, self.default_cc)
+        if not number:
+            raise ValueError(f"Could not parse phone number: {to_phone_raw!r}")
+        kwargs = {"from_": self.from_number, "to": f"whatsapp:{number}", "body": body}
+        if media_url:
+            kwargs["media_url"] = [media_url]
+        self._client.messages.create(**kwargs)
+        return number
