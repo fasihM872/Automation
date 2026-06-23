@@ -3,5 +3,10 @@ __pycache__/
 *.py[cod]
 data/sent_log.csv
 data/previews/
+data/uploads/
+data/email_images/
+data/run_queue/
+data/email_tracking.csv
+data/email_opens.csv
 .venv/
 venv/

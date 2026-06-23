@@ -1,7 +1,9 @@
 """Run email and WhatsApp promotion sends from configured lead files."""
 import argparse
+import copy
 import csv
 import os
+import secrets
 import time
 from contextlib import nullcontext
 from dataclasses import dataclass
@@ -26,6 +28,7 @@ class Business:
 
 SENT_STATUSES = {"sent", "skipped", "disabled", "no_recipient"}
 FAILED_STATUSES = {"failed", "not_configured"}
+TRACKING_LOG = config.DATA_DIR / "email_tracking.csv"
 
 
 def _pick(row, logical_name):
@@ -126,6 +129,50 @@ def append_sent(path, niche, business, message, email_status, whatsapp_status):
         )
 
 
+def _tracking_base_url(args):
+    base_url = args.tracking_base_url or os.getenv("TRACKING_BASE_URL", "")
+    return base_url.strip().rstrip("/")
+
+
+def _tracking_url(base_url, tracking_id):
+    if not base_url:
+        return ""
+    return f"{base_url}/track/open/{tracking_id}.gif"
+
+
+def append_tracking(path, tracking_id, niche, business, message):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    exists = path.exists()
+    with open(path, "a", newline="", encoding="utf-8") as fh:
+        fieldnames = [
+            "tracking_id",
+            "sent_at",
+            "niche",
+            "name",
+            "email",
+            "phone",
+            "template_name",
+            "template_url",
+            "subject",
+        ]
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        if not exists:
+            writer.writeheader()
+        writer.writerow(
+            {
+                "tracking_id": tracking_id,
+                "sent_at": datetime.now().isoformat(timespec="seconds"),
+                "niche": niche,
+                "name": business.name,
+                "email": business.email,
+                "phone": business.phone,
+                "template_name": message.template_name,
+                "template_url": message.template_url,
+                "subject": message.subject,
+            }
+        )
+
+
 def make_email_sender():
     return EmailSender(
         host=os.getenv("SMTP_HOST"),
@@ -191,10 +238,22 @@ def write_preview(message, business, out_dir):
     return path
 
 
+def apply_message_overrides(niche_cfg, args):
+    niche_cfg = copy.deepcopy(niche_cfg)
+    if args.email_subject:
+        niche_cfg["email_subject"] = args.email_subject
+    if args.email_intro:
+        niche_cfg["email_intro"] = args.email_intro
+    if args.preview_image is not None:
+        for template in niche_cfg.get("templates", []):
+            template["preview_image"] = args.preview_image
+    return niche_cfg
+
+
 def run(args):
     load_dotenv()
     niche_name = args.niche or config.ACTIVE_NICHE
-    niche_cfg = config.NICHES[niche_name]
+    niche_cfg = apply_message_overrides(config.NICHES[niche_name], args)
     sheet = Path(args.sheet) if args.sheet else niche_cfg["sheet"]
     limit = args.limit if args.limit is not None else config.MAX_PER_RUN
     dry_run = args.dry_run or not args.send
@@ -236,6 +295,7 @@ def run(args):
     templates = cycle(niche_cfg["templates"])
     sender_name = os.getenv("SENDER_NAME", "FRZ Energy")
     sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "info@frzenergy.store"))
+    tracking_base_url = _tracking_base_url(args)
 
     email_sender = None if args.no_email or dry_run else make_email_sender()
     whatsapp_sender = None if args.no_whatsapp or dry_run else make_whatsapp_sender()
@@ -248,7 +308,17 @@ def run(args):
                 continue
 
             template = next(templates)
-            message = build_message(business, template, niche_cfg, niche_name, sender_name, sender_email)
+            tracking_id = secrets.token_urlsafe(18)
+            tracking_pixel_url = _tracking_url(tracking_base_url, tracking_id)
+            message = build_message(
+                business,
+                template,
+                niche_cfg,
+                niche_name,
+                sender_name,
+                sender_email,
+                tracking_pixel_url=tracking_pixel_url,
+            )
 
             email_status = "skipped"
             whatsapp_status = "skipped"
@@ -302,6 +372,8 @@ def run(args):
                 whatsapp_status = "not_configured"
 
             append_sent(config.SENT_LOG, niche_name, business, message, email_status, whatsapp_status)
+            if email_status == "sent" and tracking_pixel_url:
+                append_tracking(TRACKING_LOG, tracking_id, niche_name, business, message)
             print(f"SENT {business.name}: email={email_status}, whatsapp={whatsapp_status}")
 
             if index < len(leads):
@@ -318,6 +390,11 @@ def parse_args():
     parser.add_argument("--send", action="store_true", help="Actually send messages. Default is dry-run.")
     parser.add_argument("--check", action="store_true", help="Validate files and credentials.")
     parser.add_argument("--preview", action="store_true", help="Write rendered email HTML to data/previews.")
+    parser.add_argument("--email-subject", type=str, help="Override the configured email subject.")
+    parser.add_argument("--email-intro", type=str, help="Override the configured email cover letter text.")
+    parser.add_argument("--preview-image", type=str, help="Override the image embedded in the email.")
+    parser.add_argument("--no-preview-image", action="store_const", const="", dest="preview_image")
+    parser.add_argument("--tracking-base-url", type=str, help="Public base URL used for email open tracking pixels.")
     parser.add_argument("--resend", action="store_true")
     parser.add_argument("--no-email", action="store_true")
     parser.add_argument("--no-whatsapp", action="store_true")

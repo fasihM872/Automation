@@ -55,7 +55,7 @@ def _resolve_preview(template):
     return "", []   # local path given but file isn't there yet — skip rather than break the email
 
 
-def build_message(business, template, niche_cfg, niche_name, sender_name, sender_email):
+def build_message(business, template, niche_cfg, niche_name, sender_name, sender_email, tracking_pixel_url=""):
     subject = _fill(niche_cfg["email_subject"], business, template, niche_name)
     intro = _fill(niche_cfg["email_intro"], business, template, niche_name)
     whatsapp_text = _fill(niche_cfg["whatsapp_message"], business, template, niche_name)
@@ -69,6 +69,7 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
         preview_src=preview_src,
         sender_name=sender_name,
         sender_email=sender_email,
+        tracking_pixel_url=tracking_pixel_url,
     )
 
     text_body = (

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musharp Automation | Email Results</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <div>
+        <strong>Musharp Automation</strong>
+        <span>Campaign mail workspace</span>
+      </div>
+    </a>
+    <nav class="main-nav">
+      <a href="/">Campaigns</a>
+      <a class="active" href="/results">Results</a>
+      <a href="/follow-ups">Follow-ups</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <header class="page-hero">
+      <div>
+        <p class="eyebrow">Delivery analytics</p>
+        <h1>Email Results</h1>
+      </div>
+    </header>
+
+    <section class="summary-grid" aria-label="Email results summary">
+      <div class="metric">
+        <span>Sent Emails</span>
+        <strong>{{ total_sent }}</strong>
+      </div>
+      <div class="metric">
+        <span>Tracked</span>
+        <strong>{{ tracked_count }}</strong>
+      </div>
+      <div class="metric">
+        <span>Opened</span>
+        <strong>{{ opened_count }}</strong>
+      </div>
+      <div class="metric">
+        <span>Tracking URL</span>
+        <strong class="metric-text">{{ "Public" if tracking_is_public else "Local" }}</strong>
+      </div>
+    </section>
+
+    {% if not tracking_is_public %}
+    <section class="panel output-panel failed">
+      <div class="panel-heading">
+        <h2>Tracking Needs Public HTTPS</h2>
+        <span>{{ tracking_base_url }}</span>
+      </div>
+      <p class="empty">Open tracking is added to new sent emails, but receivers can only report opens if this app is available on a public HTTPS URL. Set TRACKING_BASE_URL in .env when you publish it.</p>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Sent Mail Results</h2>
+        <span>{{ rows|length }} records</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sent</th>
+              <th>Campaign</th>
+              <th>Business</th>
+              <th>Email</th>
+              <th>Opened</th>
+              <th>Open Count</th>
+              <th>First Open</th>
+              <th>Tracking</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.sent_at or "Unknown" }}</td>
+              <td>{{ row.niche }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.email }}</td>
+              <td>
+                <span class="pill {% if row.opened %}sent{% elif row.tracking != 'enabled' %}queued{% endif %}">
+                  {% if row.opened %}opened{% elif row.tracking == "enabled" %}not opened{% else %}not tracked{% endif %}
+                </span>
+              </td>
+              <td>{{ row.open_count }}</td>
+              <td>{{ row.first_opened_at or "None" }}</td>
+              <td>{{ row.tracking }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

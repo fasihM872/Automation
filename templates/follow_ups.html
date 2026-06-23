@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musharp Automation | Follow-ups</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <div>
+        <strong>Musharp Automation</strong>
+        <span>Campaign mail workspace</span>
+      </div>
+    </a>
+    <nav class="main-nav">
+      <a href="/">Campaigns</a>
+      <a href="/results">Results</a>
+      <a class="active" href="/follow-ups">Follow-ups</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <header class="page-hero">
+      <div>
+        <p class="eyebrow">Previous recipients</p>
+        <h1>Follow-ups</h1>
+      </div>
+    </header>
+
+    {% if run_result %}
+    <section class="panel output-panel {% if run_result.ok %}success{% else %}failed{% endif %}">
+      <div class="panel-heading">
+        <h2>Follow-up Output</h2>
+        <span>{{ "Completed" if run_result.ok else "Stopped" }}</span>
+      </div>
+      <pre>{{ run_result.output }}</pre>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Previous Emails</h2>
+        <span>{{ rows|length }} sent mails</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sent</th>
+              <th>Campaign</th>
+              <th>Business</th>
+              <th>Email</th>
+              <th>Template</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.sent_at }}</td>
+              <td>{{ row.niche }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.email }}</td>
+              <td>{{ row.template_name }}</td>
+              <td>
+                <form method="post" action="/follow-ups/send">
+                  <input type="hidden" name="row_id" value="{{ row.row_id }}">
+                  <button type="submit">Send Again</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

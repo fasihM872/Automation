@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Promotion Sender</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <div>
+        <strong>Musharp Automation</strong>
+        <span>Campaign mail workspace</span>
+      </div>
+    </a>
+    <nav class="main-nav">
+      <a class="active" href="/">Campaigns</a>
+      <a href="/results">Results</a>
+      <a href="/follow-ups">Follow-ups</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <header class="page-hero">
+      <div>
+        <p class="eyebrow">Campaign workspace</p>
+        <h1>{{ niche.templates[0].name if niche.templates else active_niche|title }}</h1>
+      </div>
+      <form class="niche-switcher" method="get" action="/">
+        <label for="niche">Campaign</label>
+        <select id="niche" name="niche" onchange="this.form.submit()">
+          {% for name in niches %}
+          <option value="{{ name }}" {% if name == active_niche %}selected{% endif %}>{{ name|title }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </header>
+
+    <section class="summary-grid" aria-label="Campaign summary">
+      <div class="metric">
+        <span>Leads</span>
+        <strong>{{ stats.lead_count }}</strong>
+      </div>
+      <div class="metric">
+        <span>Templates</span>
+        <strong>{{ stats.template_count }}</strong>
+      </div>
+      <div class="metric">
+        <span>Sent Today</span>
+        <strong>{{ stats.today_count }}/{{ daily_limit }}</strong>
+      </div>
+      <div class="metric">
+        <span>Last Run</span>
+        <strong>{{ stats.last_run }}</strong>
+      </div>
+    </section>
+
+    <section class="workbench">
+      <div class="panel controls-panel">
+        <div class="panel-heading">
+          <h2>Run Campaign</h2>
+          <span class="status {% if setup.errors %}warn{% else %}ready{% endif %}">
+            {% if setup.errors %}Needs setup{% else %}Ready{% endif %}
+          </span>
+        </div>
+
+        {% if setup.errors %}
+        <ul class="setup-list">
+          {% for error in setup.errors %}
+          <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        <form class="upload-form" method="post" action="/upload" enctype="multipart/form-data">
+          <input type="hidden" name="niche" value="{{ active_niche }}">
+          <input type="hidden" name="sheet" value="{{ sheet }}">
+          <label for="lead_file">Add Lead File</label>
+          <div class="upload-row">
+            <input id="lead_file" name="lead_file" type="file" accept=".csv,.xlsx,.xlsm">
+            <button type="submit">Upload</button>
+          </div>
+          {% if upload_result %}
+          <p class="form-note {% if not upload_result.ok %}bad{% endif %}">{{ upload_result.message }}</p>
+          {% elif request.args.get("uploaded") %}
+          <p class="form-note">{{ request.args.get("uploaded") }} leads loaded from the uploaded file.</p>
+          {% elif request.args.get("deleted") %}
+          <p class="form-note">{{ request.args.get("deleted") }} deleted.</p>
+          {% elif request.args.get("image_uploaded") %}
+          <p class="form-note">{{ request.args.get("image_uploaded") }} added for email images.</p>
+          {% endif %}
+        </form>
+
+        <form class="upload-form" method="post" action="/upload-image" enctype="multipart/form-data">
+          <input type="hidden" name="niche" value="{{ active_niche }}">
+          <input type="hidden" name="sheet" value="{{ sheet }}">
+          <label for="email_image">Add Email Image</label>
+          <div class="upload-row">
+            <input id="email_image" name="email_image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">
+            <button type="submit">Upload</button>
+          </div>
+        </form>
+
+        <form class="run-form" method="post" action="/run">
+          <input type="hidden" name="niche" value="{{ active_niche }}">
+          <input type="hidden" name="mode" value="send">
+          <div class="field">
+            <label for="sheet">Lead file</label>
+            <select id="sheet" name="sheet" onchange="window.location='/?niche={{ active_niche }}&sheet=' + encodeURIComponent(this.value)">
+              {% for option in available_sheets %}
+              <option value="{{ option.value }}" {% if option.value == sheet %}selected{% endif %}>{{ option.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if current_business %}
+          <div class="current-lead">
+            <span>Current business</span>
+            <strong>{{ current_business.name }}</strong>
+            <small>{{ current_business.email or "No email" }}</small>
+          </div>
+          {% endif %}
+          <div class="field">
+            <label for="email_subject">Email subject</label>
+            <input id="email_subject" name="email_subject" type="text" value="{{ email_subject }}">
+          </div>
+          <div class="field">
+            <label for="email_intro">Cover letter</label>
+            <textarea id="email_intro" name="email_intro" rows="8">{{ email_intro }}</textarea>
+          </div>
+          <div class="field">
+            <label for="preview_image">Email image</label>
+            <select id="preview_image" name="preview_image" onchange="window.location='/?niche={{ active_niche }}&sheet={{ sheet|urlencode }}&image=' + encodeURIComponent(this.value)">
+              {% for image in available_images %}
+              <option value="{{ image.value }}" {% if image.value == selected_image %}selected{% endif %}>{{ image.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="check-grid">
+            <label><input type="checkbox" name="preview" checked> Write email preview</label>
+            <label><input type="checkbox" name="no_email"> Skip email</label>
+            <label><input type="checkbox" name="no_whatsapp" checked> Skip WhatsApp</label>
+          </div>
+          <button type="submit" {% if not current_business or remaining_today == 0 %}disabled{% endif %}>Send Current Email</button>
+          {% if remaining_today == 0 %}
+          <p class="form-note bad">Daily limit reached for this campaign.</p>
+          {% elif not current_business %}
+          <p class="form-note bad">No unsent businesses left in this file.</p>
+          {% endif %}
+        </form>
+
+        <div class="uploaded-files">
+          <h3>Uploaded Files</h3>
+          {% set has_uploads = available_sheets|selectattr("uploaded")|list %}
+          {% if has_uploads %}
+          {% for option in available_sheets if option.uploaded %}
+          <div class="file-row">
+            <span>{{ option.name }}</span>
+            <form method="post" action="/delete-upload">
+              <input type="hidden" name="niche" value="{{ active_niche }}">
+              <input type="hidden" name="sheet" value="{{ option.value }}">
+              <button class="danger-button" type="submit">Delete</button>
+            </form>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p>No uploaded files yet.</p>
+          {% endif %}
+        </div>
+
+        <div class="config-strip">
+          <span>Email: {{ "configured" if setup.email_ready else "missing" }}</span>
+          <span>Sheet: {{ sheet }}</span>
+        </div>
+      </div>
+
+      <div class="panel preview-panel">
+        <div class="panel-heading">
+          <h2>Email Preview</h2>
+          {% if sample_business %}<span>{{ sample_business.name }}</span>{% endif %}
+        </div>
+        {% if sample_message %}
+        <div class="email-frame">{{ sample_message.html_body|safe }}</div>
+        {% else %}
+        <p class="empty">Add at least one lead and one template to preview the email.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel output-panel">
+      <div class="panel-heading">
+        <h2>Today Queue</h2>
+        <span>{{ remaining_today }} remaining</span>
+      </div>
+      {% if daily_queue %}
+      <div class="queue-list">
+        {% for business in daily_queue %}
+        <div class="queue-row {% if loop.first %}active{% endif %}">
+          <strong>{{ loop.index }}. {{ business.name }}</strong>
+          <span>{{ business.email or "No email" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">No businesses queued for today.</p>
+      {% endif %}
+    </section>
+
+    {% if run_result %}
+    <section class="panel output-panel {% if run_result.ok %}success{% else %}failed{% endif %}">
+      <div class="panel-heading">
+        <h2>Run Output</h2>
+        <span>{{ "Completed" if run_result.ok else "Stopped" }}</span>
+      </div>
+      <pre>{{ run_result.output }}</pre>
+    </section>
+    {% endif %}
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>Lead List</h2>
+          <span>{{ leads|length }} total</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>WhatsApp</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lead in leads %}
+              <tr>
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.email or "None" }}</td>
+                <td>{{ lead.normalized_phone or "None" }}</td>
+                <td>
+                  <span class="pill {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}queued{% endif %}">
+                    {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}today{% else %}pending{% endif %}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>WhatsApp Copy</h2>
+          {% if sample_message %}<a href="{{ sample_message.template_url }}" target="_blank" rel="noopener">Open demo</a>{% endif %}
+        </div>
+        {% if sample_message %}
+        <pre class="message-copy">{{ sample_message.whatsapp_text }}</pre>
+        {% else %}
+        <p class="empty">No WhatsApp preview available.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="content-grid lower-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>Templates</h2>
+          <span>{{ templates|length }}</span>
+        </div>
+        <div class="template-list">
+          {% for template in templates %}
+          <article class="template-item">
+            {% set image_url = template_previews[template.name] %}
+            {% if image_url %}<img src="{{ image_url }}" alt="{{ template.name }} preview">{% endif %}
+            <div>
+              <h3>{{ template.name }}</h3>
+              <a href="{{ template.url }}" target="_blank" rel="noopener">{{ template.url }}</a>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>Recent Log</h2>
+          <span>{{ sent_rows|length }}</span>
+        </div>
+        {% if sent_rows %}
+        <div class="log-list">
+          {% for row in sent_rows %}
+          <div class="log-row">
+            <strong>{{ row.name }}</strong>
+            <span>{{ row.email_status }} email · {{ row.whatsapp_status }} WhatsApp</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">No successful live sends have been logged yet.</p>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
