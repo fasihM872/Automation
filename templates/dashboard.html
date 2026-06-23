@@ -19,6 +19,7 @@
       <a class="active" href="/">Campaigns</a>
       <a href="/results">Results</a>
       <a href="/follow-ups">Follow-ups</a>
+      <a href="/responses">Responses</a>
     </nav>
   </header>
 
@@ -85,7 +86,7 @@
           {% if upload_result %}
           <p class="form-note {% if not upload_result.ok %}bad{% endif %}">{{ upload_result.message }}</p>
           {% elif request.args.get("uploaded") %}
-          <p class="form-note">{{ request.args.get("uploaded") }} leads loaded from the uploaded file.</p>
+          <p class="form-note">{{ request.args.get("uploaded") }}.</p>
           {% elif request.args.get("deleted") %}
           <p class="form-note">{{ request.args.get("deleted") }} deleted.</p>
           {% elif request.args.get("image_uploaded") %}
@@ -128,6 +129,11 @@
           <div class="field">
             <label for="email_intro">Cover letter</label>
             <textarea id="email_intro" name="email_intro" rows="8">{{ email_intro }}</textarea>
+            <p class="form-note">Use {template_url} in the cover letter to insert a clickable demo link.</p>
+          </div>
+          <div class="field">
+            <label for="template_url">Template link</label>
+            <input id="template_url" name="template_url" type="url" value="{{ template_url }}" placeholder="https://example.com/demo">
           </div>
           <div class="field">
             <label for="preview_image">Email image</label>
@@ -136,6 +142,7 @@
               <option value="{{ image.value }}" {% if image.value == selected_image %}selected{% endif %}>{{ image.label }}</option>
               {% endfor %}
             </select>
+            <p class="form-note">Choose the image embedded in the email. The image is also linked to the template link above.</p>
           </div>
           <div class="check-grid">
             <label><input type="checkbox" name="preview" checked> Write email preview</label>

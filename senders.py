@@ -38,6 +38,8 @@ class EmailSender:
         if not host or not username or not password:
             raise RuntimeError("SMTP not configured. Fill SMTP_HOST / SMTP_USERNAME / SMTP_PASSWORD in .env")
         self.host, self.port = host, int(port)
+        if "gmail.com" in host.lower():
+            password = "".join(password.split())
         self.username, self.password = username, password
         self.sender_name, self.sender_email = sender_name, sender_email
         self.reply_to = reply_to or sender_email
@@ -46,7 +48,19 @@ class EmailSender:
     def __enter__(self):
         self._server = smtplib.SMTP(self.host, self.port, timeout=30)
         self._server.starttls(context=ssl.create_default_context())
-        self._server.login(self.username, self.password)
+        try:
+            self._server.login(self.username, self.password)
+        except smtplib.SMTPAuthenticationError as exc:
+            if "gmail.com" in self.host.lower():
+                raise RuntimeError(
+                    "Gmail rejected the SMTP login. Use a Gmail App Password, not your normal "
+                    "Google password: enable 2-Step Verification, create an App Password for Mail, "
+                    "then put the 16-character password in SMTP_PASSWORD. Also make sure "
+                    "SMTP_USERNAME, SENDER_EMAIL, and REPLY_TO are the same Gmail address."
+                ) from exc
+            raise RuntimeError(
+                "SMTP login failed. Check SMTP_USERNAME, SMTP_PASSWORD, SMTP_HOST, and SMTP_PORT."
+            ) from exc
         return self
 
     def __exit__(self, *exc):

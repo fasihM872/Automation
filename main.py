@@ -244,6 +244,9 @@ def apply_message_overrides(niche_cfg, args):
         niche_cfg["email_subject"] = args.email_subject
     if args.email_intro:
         niche_cfg["email_intro"] = args.email_intro
+    if args.template_url:
+        for template in niche_cfg.get("templates", []):
+            template["url"] = args.template_url
     if args.preview_image is not None:
         for template in niche_cfg.get("templates", []):
             template["preview_image"] = args.preview_image
@@ -392,6 +395,7 @@ def parse_args():
     parser.add_argument("--preview", action="store_true", help="Write rendered email HTML to data/previews.")
     parser.add_argument("--email-subject", type=str, help="Override the configured email subject.")
     parser.add_argument("--email-intro", type=str, help="Override the configured email cover letter text.")
+    parser.add_argument("--template-url", type=str, help="Override the template/demo URL used in the email.")
     parser.add_argument("--preview-image", type=str, help="Override the image embedded in the email.")
     parser.add_argument("--no-preview-image", action="store_const", const="", dest="preview_image")
     parser.add_argument("--tracking-base-url", type=str, help="Public base URL used for email open tracking pixels.")

@@ -1,20 +1,27 @@
 """Web dashboard for the promotion sender."""
 import csv
+import html
+import imaplib
+import email as email_parser
 import os
+import re
 import subprocess
 import sys
 from datetime import date, datetime
+from email.header import decode_header, make_header
+from email.utils import parseaddr, parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from flask import Flask, redirect, render_template, request, Response, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 
 import config
+import db
 from content import build_message
-from main import load_leads, load_sent, validate_setup
-from senders import normalize_phone
+from main import Business, load_leads, load_sent, validate_setup
+from senders import EmailSender, normalize_phone
 
 
 app = Flask(__name__)
@@ -28,11 +35,45 @@ OPEN_LOG = config.DATA_DIR / "email_opens.csv"
 ALLOWED_LEAD_EXTENSIONS = {".csv", ".xlsx", ".xlsm"}
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 DAILY_EMAIL_LIMIT = 5
+SENT_FIELDNAMES = [
+    "sent_at",
+    "niche",
+    "name",
+    "email",
+    "phone",
+    "template_name",
+    "template_url",
+    "email_status",
+    "whatsapp_status",
+]
+TRACKING_FIELDNAMES = [
+    "tracking_id",
+    "sent_at",
+    "niche",
+    "name",
+    "email",
+    "phone",
+    "template_name",
+    "template_url",
+    "subject",
+]
+OPEN_FIELDNAMES = ["tracking_id", "opened_at", "ip", "user_agent"]
+MAX_RESPONSES = 50
 PIXEL_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
     b"\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,"
     b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
 )
+
+
+def _command_env():
+    env = os.environ.copy()
+    env.update({key: value for key, value in dotenv_values(config.BASE_DIR / ".env").items() if value is not None})
+    return env
+
+
+def _env_value(name, default=""):
+    return _command_env().get(name, default)
 
 
 def _rel(path):
@@ -43,6 +84,12 @@ def _rel(path):
 
 
 def _read_sent_rows():
+    try:
+        db_rows = db.get_sent_rows()
+        if db_rows:
+            return [{**row, "_db_id": row.get("id", "")} for row in db_rows]
+    except Exception:
+        pass
     if not config.SENT_LOG.exists():
         return []
     with open(config.SENT_LOG, newline="", encoding="utf-8") as fh:
@@ -54,6 +101,14 @@ def _read_csv_rows(path):
         return []
     with open(path, newline="", encoding="utf-8") as fh:
         return list(csv.DictReader(fh))
+
+
+def _write_csv_rows(path, rows, fieldnames):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def _append_open(tracking_id):
@@ -88,6 +143,12 @@ def _tracking_is_public():
 
 
 def _result_rows():
+    sent_rows = _read_sent_rows()
+    sent_ids_by_key = {}
+    for index, row in enumerate(sent_rows):
+        key = (row.get("niche", ""), row.get("email", ""), row.get("phone", ""), row.get("template_url", ""))
+        sent_ids_by_key.setdefault(key, index)
+
     tracking_rows = _read_csv_rows(TRACKING_LOG)
     open_rows = _read_csv_rows(OPEN_LOG)
     opens_by_id = {}
@@ -96,13 +157,17 @@ def _result_rows():
 
     rows = []
     tracked_keys = set()
-    for row in tracking_rows:
+    for tracking_index, row in enumerate(tracking_rows):
         tracking_id = row.get("tracking_id", "")
         opens = opens_by_id.get(tracking_id, [])
-        tracked_keys.add((row.get("niche", ""), row.get("email", ""), row.get("phone", "")))
+        key = (row.get("niche", ""), row.get("email", ""), row.get("phone", ""))
+        sent_key = (*key, row.get("template_url", ""))
+        tracked_keys.add(key)
         rows.append(
             {
                 **row,
+                "tracking_row_id": tracking_index,
+                "sent_row_id": sent_ids_by_key.get(sent_key, ""),
                 "tracking": "enabled",
                 "open_count": len(opens),
                 "first_opened_at": opens[0].get("opened_at", "") if opens else "",
@@ -111,12 +176,14 @@ def _result_rows():
             }
         )
 
-    for row in _read_sent_rows():
+    for sent_index, row in enumerate(sent_rows):
         key = (row.get("niche", ""), row.get("email", ""), row.get("phone", ""))
         if row.get("email_status") != "sent" or key in tracked_keys:
             continue
         rows.append(
             {
+                "tracking_row_id": "",
+                "sent_row_id": sent_index,
                 "tracking_id": "",
                 "sent_at": row.get("sent_at", ""),
                 "niche": row.get("niche", ""),
@@ -144,6 +211,52 @@ def _find_sent_row(row_id):
     return None
 
 
+def _delete_sent_row(row_id):
+    sent_rows = _read_sent_rows()
+    try:
+        index = int(row_id)
+    except (TypeError, ValueError):
+        return None
+    if index < 0 or index >= len(sent_rows):
+        return None
+
+    removed = sent_rows.pop(index)
+    if removed.get("_db_id"):
+        db.delete_sent_email(removed["_db_id"])
+        _delete_related_tracking(removed)
+        return removed
+    _write_csv_rows(config.SENT_LOG, sent_rows, SENT_FIELDNAMES)
+    _delete_related_tracking(removed)
+    return removed
+
+
+def _delete_related_tracking(sent_row):
+    tracking_rows = _read_csv_rows(TRACKING_LOG)
+    if not tracking_rows:
+        return
+
+    removed_tracking_ids = []
+    kept_tracking = []
+    target = (
+        sent_row.get("niche", ""),
+        sent_row.get("email", ""),
+        sent_row.get("phone", ""),
+        sent_row.get("template_url", ""),
+    )
+    for row in tracking_rows:
+        key = (row.get("niche", ""), row.get("email", ""), row.get("phone", ""), row.get("template_url", ""))
+        if key == target:
+            if row.get("tracking_id"):
+                removed_tracking_ids.append(row["tracking_id"])
+        else:
+            kept_tracking.append(row)
+    _write_csv_rows(TRACKING_LOG, kept_tracking, TRACKING_FIELDNAMES)
+
+    if removed_tracking_ids:
+        open_rows = [row for row in _read_csv_rows(OPEN_LOG) if row.get("tracking_id") not in removed_tracking_ids]
+        _write_csv_rows(OPEN_LOG, open_rows, OPEN_FIELDNAMES)
+
+
 def _sent_email_rows():
     rows = [
         {**row, "row_id": index}
@@ -152,6 +265,194 @@ def _sent_email_rows():
     ]
     rows.reverse()
     return rows
+
+
+def _sent_contacts_by_email():
+    contacts = {}
+    for index, row in enumerate(_read_sent_rows()):
+        if row.get("email_status") != "sent" or not row.get("email"):
+            continue
+        email = row["email"].strip().lower()
+        contacts[email] = {**row, "row_id": index}
+    return contacts
+
+
+def _sent_response_contact_count():
+    count = 0
+    for row in _read_sent_rows():
+        email = row.get("email", "").strip().lower()
+        if row.get("email_status") == "sent" and email:
+            count += 1
+    return count
+
+
+def _is_reply_message(message):
+    subject = _decode_header(message.get("Subject", "")).strip().lower()
+    return bool(message.get("In-Reply-To") or message.get("References") or subject.startswith("re:"))
+
+
+def _own_email_addresses():
+    emails = set()
+    for name in ("SMTP_USERNAME", "SENDER_EMAIL", "REPLY_TO", "IMAP_USERNAME"):
+        value = (_env_value(name) or "").strip().lower()
+        _, parsed = parseaddr(value)
+        if parsed:
+            emails.add(parsed.lower())
+        elif "@" in value:
+            emails.add(value)
+    return emails
+
+
+def _decode_header(value):
+    if not value:
+        return ""
+    try:
+        return str(make_header(decode_header(value)))
+    except (UnicodeDecodeError, ValueError):
+        return value
+
+
+def _message_text(message):
+    html_body = ""
+    if message.is_multipart():
+        for part in message.walk():
+            content_type = part.get_content_type()
+            disposition = (part.get("Content-Disposition") or "").lower()
+            if "attachment" in disposition:
+                continue
+            payload = part.get_payload(decode=True)
+            if not payload:
+                continue
+            charset = part.get_content_charset() or "utf-8"
+            try:
+                text = payload.decode(charset, errors="replace")
+            except LookupError:
+                text = payload.decode("utf-8", errors="replace")
+            if content_type == "text/plain" and text.strip():
+                return text.strip()
+            if content_type == "text/html" and text.strip() and not html_body:
+                html_body = text
+    else:
+        payload = message.get_payload(decode=True)
+        if payload:
+            charset = message.get_content_charset() or "utf-8"
+            try:
+                return payload.decode(charset, errors="replace").strip()
+            except LookupError:
+                return payload.decode("utf-8", errors="replace").strip()
+
+    if html_body:
+        text = re.sub(r"(?is)<(script|style).*?>.*?</\1>", "", html_body)
+        text = re.sub(r"(?s)<br\s*/?>", "\n", text)
+        text = re.sub(r"(?s)</p\s*>", "\n\n", text)
+        text = re.sub(r"(?s)<.*?>", "", text)
+        return html.unescape(text).strip()
+    return ""
+
+
+def _response_since_date(contacts):
+    dates = []
+    for row in contacts.values():
+        try:
+            dates.append(datetime.fromisoformat(row.get("sent_at", "")).date())
+        except ValueError:
+            pass
+    if not dates:
+        return ""
+    return min(dates).strftime("%d-%b-%Y")
+
+
+def _fetch_responses():
+    contacts = _sent_contacts_by_email()
+    if not contacts:
+        if _sent_response_contact_count() == 0:
+            return [], "No recipient replies yet. Sent emails from your own sender address are ignored."
+        return [], "No sent recipient contacts found yet."
+
+    host = _env_value("IMAP_HOST", "imap.gmail.com")
+    username = _env_value("IMAP_USERNAME") or _env_value("SMTP_USERNAME")
+    password = _env_value("IMAP_PASSWORD") or _env_value("SMTP_PASSWORD")
+    own_emails = _own_email_addresses()
+    if "gmail.com" in host.lower():
+        password = "".join(password.split())
+    if not host or not username or not password:
+        return [], "IMAP is not configured. Add IMAP_HOST, IMAP_USERNAME, and IMAP_PASSWORD or reuse your Gmail SMTP values."
+
+    try:
+        with imaplib.IMAP4_SSL(host, 993) as mailbox:
+            mailbox.login(username, password)
+            mailbox.select("INBOX")
+            criteria = ["ALL"]
+            since = _response_since_date(contacts)
+            if since:
+                criteria = ["SINCE", since]
+            status, data = mailbox.uid("search", None, *criteria)
+            if status != "OK":
+                return [], "Could not search inbox responses."
+
+            uids = data[0].split()
+            responses = []
+            for uid in reversed(uids[-300:]):
+                status, fetched = mailbox.uid("fetch", uid, "(RFC822)")
+                if status != "OK" or not fetched:
+                    continue
+                raw = next((item[1] for item in fetched if isinstance(item, tuple)), None)
+                if not raw:
+                    continue
+                message = email_parser.message_from_bytes(raw)
+                from_name, from_email = parseaddr(message.get("From", ""))
+                from_email = from_email.strip().lower()
+                if from_email in own_emails and not _is_reply_message(message):
+                    continue
+                if from_email not in contacts:
+                    continue
+                subject = _decode_header(message.get("Subject", "No subject"))
+                sent_at = message.get("Date", "")
+                try:
+                    sent_at = parsedate_to_datetime(sent_at).strftime("%Y-%m-%d %H:%M")
+                except (TypeError, ValueError, AttributeError):
+                    pass
+                contact = contacts[from_email]
+                body = _message_text(message)
+                responses.append(
+                    {
+                        "response_id": uid.decode("ascii", errors="ignore"),
+                        "from_name": _decode_header(from_name) or contact.get("name") or from_email,
+                        "from_email": from_email,
+                        "subject": subject,
+                        "received_at": sent_at,
+                        "body": body,
+                        "preview": body[:260],
+                        "contact": contact,
+                    }
+                )
+                if len(responses) >= MAX_RESPONSES:
+                    break
+            return responses, ""
+    except imaplib.IMAP4.error as exc:
+        return [], f"IMAP login or fetch failed: {exc}"
+    except OSError as exc:
+        return [], f"Could not connect to IMAP server: {exc}"
+
+
+def _send_response_reply(to_email, subject, body):
+    sender_name = _env_value("SENDER_NAME", "Musharp Automation")
+    sender_email = _env_value("SENDER_EMAIL") or _env_value("SMTP_USERNAME", "")
+    reply_to = _env_value("REPLY_TO") or sender_email
+    html_body = "<br>".join(html.escape(line) for line in body.splitlines())
+    text_body = body
+    if not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}"
+    with EmailSender(
+        host=_env_value("SMTP_HOST"),
+        port=_env_value("SMTP_PORT", "587"),
+        username=_env_value("SMTP_USERNAME"),
+        password=_env_value("SMTP_PASSWORD"),
+        sender_name=sender_name,
+        sender_email=sender_email,
+        reply_to=reply_to,
+    ) as email_client:
+        email_client.send(to_email, subject, html_body, text_body)
 
 
 def _campaign_upload_dir(niche_name):
@@ -164,6 +465,15 @@ def _campaign_image_dir(niche_name):
 
 def _lead_key(niche_name, lead):
     return (niche_name, lead.email, lead.phone)
+
+
+def _business_from_db(row):
+    return Business(
+        name=row.get("name") or "there",
+        email=row.get("email", ""),
+        phone=row.get("phone", ""),
+        address=row.get("address", ""),
+    )
 
 
 def _sent_today_count(niche_name, sent_rows):
@@ -326,6 +636,10 @@ def _message_config(niche_name, niche_cfg, email_subject=None, email_intro=None,
         copied["email_subject"] = email_subject
     if email_intro:
         copied["email_intro"] = email_intro
+    template_url = (request.values.get("template_url") or "").strip()
+    if template_url:
+        for template in copied["templates"]:
+            template["url"] = template_url
     image = _resolve_image(niche_name, preview_image)
     if image is not None:
         for template in copied["templates"]:
@@ -375,15 +689,25 @@ def _whatsapp_web_url(phone, text):
 
 
 def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None):
-    load_dotenv(override=True)
+    load_dotenv(config.BASE_DIR / ".env", override=True)
     base_niche_cfg = config.NICHES[niche_name]
     sheet = _resolve_sheet(niche_name, base_niche_cfg, requested_sheet)
-    leads = list(load_leads(sheet)) if Path(sheet).exists() else []
-    sent_keys = load_sent(config.SENT_LOG)
+    use_db = db.has_leads(niche_name)
+    db_lead_rows = db.get_leads(niche_name) if use_db else []
+    leads = [_business_from_db(row) for row in db_lead_rows] if use_db else list(load_leads(sheet)) if Path(sheet).exists() else []
+    sent_keys = {
+        (niche_name, row.get("email", ""), row.get("phone", ""))
+        for row in db_lead_rows
+        if row.get("status") == "sent"
+    } if use_db else load_sent(config.SENT_LOG)
     sent_rows = _read_sent_rows()
-    sent_today_count = _sent_today_count(niche_name, sent_rows)
+    sent_today_count = db.sent_today_count(niche_name, date.today().isoformat()) if use_db else _sent_today_count(niche_name, sent_rows)
     remaining_today = max(DAILY_EMAIL_LIMIT - sent_today_count, 0)
-    pending_leads = [lead for lead in leads if _lead_key(niche_name, lead) not in sent_keys]
+    pending_leads = (
+        [_business_from_db(row) for row in db_lead_rows if row.get("status") != "sent"]
+        if use_db
+        else [lead for lead in leads if _lead_key(niche_name, lead) not in sent_keys]
+    )
     daily_queue = pending_leads[:remaining_today]
     current_business = daily_queue[0] if daily_queue else None
     base_templates = base_niche_cfg.get("templates", [])
@@ -397,8 +721,10 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "info@frzenergy.store"))
     sample_business = current_business
     sample_message = None
+    template_url = current_template.get("url", "") if current_template else ""
     if sample_business and templates:
         sample_message = build_message(sample_business, templates[0], niche_cfg, niche_name, sender_name, sender_email)
+        template_url = sample_message.template_url
 
     enriched_leads = []
     for lead in leads:
@@ -437,6 +763,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "selected_image": preview_image or "__default__",
         "email_subject": niche_cfg.get("email_subject", ""),
         "email_intro": niche_cfg.get("email_intro", ""),
+        "template_url": template_url,
         "current_business": current_business,
         "daily_queue": daily_queue,
         "daily_limit": DAILY_EMAIL_LIMIT,
@@ -504,7 +831,9 @@ def upload_leads():
     uploaded.save(saved_path)
 
     try:
-        lead_count = len(list(load_leads(saved_path)))
+        leads = list(load_leads(saved_path))
+        lead_count = len(leads)
+        import_result = db.import_leads(niche_name, original_name, leads)
     except Exception as exc:
         saved_path.unlink(missing_ok=True)
         return render_template(
@@ -514,7 +843,8 @@ def upload_leads():
             upload_result={"ok": False, "message": f"Could not read that file: {exc}"},
         )
 
-    return redirect(url_for("dashboard", niche=niche_name, sheet=_rel(saved_path), uploaded=lead_count))
+    message = f"{lead_count} leads loaded ({import_result['added']} new, {import_result['updated']} updated)"
+    return redirect(url_for("dashboard", niche=niche_name, sheet=_rel(saved_path), uploaded=message))
 
 
 @app.post("/upload-image")
@@ -590,11 +920,14 @@ def run_campaign():
     mode = request.form.get("mode", "dry-run")
     args = [sys.executable, "main.py", "--niche", niche_name]
     sheet = _resolve_sheet(niche_name, config.NICHES[niche_name], request.form.get("sheet"))
-    leads = list(load_leads(sheet)) if sheet.exists() else []
-    sent_keys = load_sent(config.SENT_LOG)
+    use_db = db.has_leads(niche_name)
+    db_pending = db.get_pending_leads(niche_name, 1) if use_db else []
+    leads = [_business_from_db(row) for row in db_pending] if use_db else list(load_leads(sheet)) if sheet.exists() else []
+    sent_keys = set() if use_db else load_sent(config.SENT_LOG)
     sent_rows = _read_sent_rows()
-    remaining_today = max(DAILY_EMAIL_LIMIT - _sent_today_count(niche_name, sent_rows), 0)
-    pending_leads = [lead for lead in leads if _lead_key(niche_name, lead) not in sent_keys]
+    today_count = db.sent_today_count(niche_name, date.today().isoformat()) if use_db else _sent_today_count(niche_name, sent_rows)
+    remaining_today = max(DAILY_EMAIL_LIMIT - today_count, 0)
+    pending_leads = leads if use_db else [lead for lead in leads if _lead_key(niche_name, lead) not in sent_keys]
     current_business = pending_leads[0] if remaining_today and pending_leads else None
     if not current_business:
         return render_template(
@@ -630,6 +963,9 @@ def run_campaign():
         args.extend(["--email-subject", email_subject])
     if email_intro:
         args.extend(["--email-intro", email_intro])
+    template_url = request.form.get("template_url", "").strip()
+    if template_url:
+        args.extend(["--template-url", template_url])
     if resolved_image is not None:
         if resolved_image:
             args.extend(["--preview-image", resolved_image])
@@ -646,12 +982,24 @@ def run_campaign():
     completed = subprocess.run(
         args,
         cwd=config.BASE_DIR,
+        env=_command_env(),
         text=True,
         capture_output=True,
         timeout=600,
         check=False,
     )
     output = "\n".join(part for part in (completed.stdout, completed.stderr) if part.strip()).strip()
+    if use_db and completed.returncode == 0 and mode == "send":
+        template = _message_config(niche_name, config.NICHES[niche_name], email_subject, email_intro, preview_image)["templates"][0]
+        db.mark_sent(
+            niche_name,
+            current_business,
+            template.get("name", ""),
+            template.get("url", ""),
+            email_status="sent" if not request.form.get("no_email") else "disabled",
+            whatsapp_status="disabled" if request.form.get("no_whatsapp") else "sent",
+            sent_at=datetime.now().isoformat(timespec="seconds"),
+        )
     return render_template(
         "dashboard.html",
         **_build_dashboard(niche_name, request.form.get("sheet"), email_subject, email_intro, preview_image),
@@ -679,9 +1027,83 @@ def results():
     )
 
 
+@app.post("/results/delete")
+def delete_result():
+    removed = _delete_sent_row(request.form.get("sent_row_id", ""))
+    if removed:
+        return redirect(url_for("results", deleted=removed.get("name") or removed.get("email") or "record"))
+    rows = _result_rows()
+    return render_template(
+        "results.html",
+        rows=rows,
+        opened_count=sum(1 for row in rows if row["opened"]),
+        tracked_count=sum(1 for row in rows if row["tracking"] == "enabled"),
+        total_sent=len(rows),
+        tracking_base_url=_tracking_base_url(),
+        tracking_is_public=_tracking_is_public(),
+        run_result={"ok": False, "output": "Could not delete that results row."},
+    )
+
+
 @app.get("/follow-ups")
 def follow_ups():
     return render_template("follow_ups.html", rows=_sent_email_rows(), run_result=None)
+
+
+@app.get("/responses")
+def responses():
+    rows, error = _fetch_responses()
+    return render_template(
+        "responses.html",
+        rows=rows,
+        run_result={"ok": False, "output": error} if error else None,
+    )
+
+
+@app.post("/responses/send")
+def send_response():
+    to_email = request.form.get("to_email", "").strip()
+    subject = request.form.get("subject", "").strip() or "Following up"
+    body = request.form.get("body", "").strip()
+    if not to_email or not body:
+        rows, _ = _fetch_responses()
+        return render_template(
+            "responses.html",
+            rows=rows,
+            run_result={"ok": False, "output": "Write a reply before sending."},
+        )
+    try:
+        _send_response_reply(to_email, subject, body)
+        rows, _ = _fetch_responses()
+        return render_template(
+            "responses.html",
+            rows=rows,
+            run_result={"ok": True, "output": f"Reply sent to {to_email}."},
+        )
+    except Exception as exc:
+        rows, _ = _fetch_responses()
+        return render_template(
+            "responses.html",
+            rows=rows,
+            run_result={"ok": False, "output": str(exc)},
+        )
+
+
+@app.post("/follow-ups/delete")
+def delete_follow_up():
+    removed = _delete_sent_row(request.form.get("row_id", ""))
+    return render_template(
+        "follow_ups.html",
+        rows=_sent_email_rows(),
+        run_result={
+            "ok": bool(removed),
+            "output": (
+                f"Deleted {removed.get('name') or removed.get('email') or 'that row'} from follow-ups and results."
+                if removed
+                else "Could not delete that follow-up row."
+            ),
+        },
+    )
 
 
 @app.post("/follow-ups/send")
@@ -721,6 +1143,8 @@ def send_follow_up():
         subject,
         "--email-intro",
         intro,
+        "--template-url",
+        row.get("template_url", ""),
         "--tracking-base-url",
         _tracking_base_url(),
     ]
@@ -728,6 +1152,7 @@ def send_follow_up():
     completed = subprocess.run(
         args,
         cwd=config.BASE_DIR,
+        env=_command_env(),
         text=True,
         capture_output=True,
         timeout=600,

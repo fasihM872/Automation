@@ -19,6 +19,7 @@
       <a href="/">Campaigns</a>
       <a class="active" href="/results">Results</a>
       <a href="/follow-ups">Follow-ups</a>
+      <a href="/responses">Responses</a>
     </nav>
   </header>
 
@@ -59,6 +60,26 @@
     </section>
     {% endif %}
 
+    {% if request.args.get("deleted") %}
+    <section class="panel output-panel success">
+      <div class="panel-heading">
+        <h2>Result Deleted</h2>
+        <span>Completed</span>
+      </div>
+      <p class="empty">{{ request.args.get("deleted") }} was removed from results and follow-ups.</p>
+    </section>
+    {% endif %}
+
+    {% if run_result %}
+    <section class="panel output-panel {% if run_result.ok %}success{% else %}failed{% endif %}">
+      <div class="panel-heading">
+        <h2>Result Output</h2>
+        <span>{{ "Completed" if run_result.ok else "Stopped" }}</span>
+      </div>
+      <pre>{{ run_result.output }}</pre>
+    </section>
+    {% endif %}
+
     <section class="panel">
       <div class="panel-heading">
         <h2>Sent Mail Results</h2>
@@ -76,6 +97,7 @@
               <th>Open Count</th>
               <th>First Open</th>
               <th>Tracking</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -93,6 +115,16 @@
               <td>{{ row.open_count }}</td>
               <td>{{ row.first_opened_at or "None" }}</td>
               <td>{{ row.tracking }}</td>
+              <td>
+                {% if row.sent_row_id != "" %}
+                <form method="post" action="/results/delete" onsubmit="return confirm('Delete this row from results and follow-ups?');">
+                  <input type="hidden" name="sent_row_id" value="{{ row.sent_row_id }}">
+                  <button class="danger-button" type="submit">Delete</button>
+                </form>
+                {% else %}
+                <span class="muted-text">No log row</span>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>

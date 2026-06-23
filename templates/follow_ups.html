@@ -19,6 +19,7 @@
       <a href="/">Campaigns</a>
       <a href="/results">Results</a>
       <a class="active" href="/follow-ups">Follow-ups</a>
+      <a href="/responses">Responses</a>
     </nav>
   </header>
 
@@ -66,10 +67,16 @@
               <td>{{ row.email }}</td>
               <td>{{ row.template_name }}</td>
               <td>
-                <form method="post" action="/follow-ups/send">
-                  <input type="hidden" name="row_id" value="{{ row.row_id }}">
-                  <button type="submit">Send Again</button>
-                </form>
+                <div class="action-row">
+                  <form method="post" action="/follow-ups/send">
+                    <input type="hidden" name="row_id" value="{{ row.row_id }}">
+                    <button type="submit">Send Again</button>
+                  </form>
+                  <form method="post" action="/follow-ups/delete" onsubmit="return confirm('Delete this row from follow-ups and results?');">
+                    <input type="hidden" name="row_id" value="{{ row.row_id }}">
+                    <button class="danger-button" type="submit">Delete</button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% endfor %}
