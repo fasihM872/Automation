@@ -251,7 +251,7 @@ def apply_message_overrides(niche_cfg, args):
 
 
 def run(args):
-    load_dotenv()
+    load_dotenv(override=True)
     niche_name = args.niche or config.ACTIVE_NICHE
     niche_cfg = apply_message_overrides(config.NICHES[niche_name], args)
     sheet = Path(args.sheet) if args.sheet else niche_cfg["sheet"]

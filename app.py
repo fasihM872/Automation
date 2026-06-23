@@ -5,6 +5,7 @@ import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, Response, send_from_directory, url_for
@@ -365,8 +366,16 @@ def _preview_image_url(template):
     return ""
 
 
+def _whatsapp_web_url(phone, text):
+    number = normalize_phone(phone, config.DEFAULT_COUNTRY_CODE)
+    if not number:
+        return ""
+    digits = "".join(ch for ch in number if ch.isdigit())
+    return f"https://wa.me/{digits}?text={quote(text)}"
+
+
 def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None):
-    load_dotenv()
+    load_dotenv(override=True)
     base_niche_cfg = config.NICHES[niche_name]
     sheet = _resolve_sheet(niche_name, base_niche_cfg, requested_sheet)
     leads = list(load_leads(sheet)) if Path(sheet).exists() else []
@@ -393,12 +402,16 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
 
     enriched_leads = []
     for lead in leads:
+        lead_message = None
+        if templates:
+            lead_message = build_message(lead, templates[0], niche_cfg, niche_name, sender_name, sender_email)
         enriched_leads.append(
             {
                 "name": lead.name,
                 "email": lead.email,
                 "phone": lead.phone,
                 "normalized_phone": normalize_phone(lead.phone, config.DEFAULT_COUNTRY_CODE) or lead.phone,
+                "whatsapp_url": _whatsapp_web_url(lead.phone, lead_message.whatsapp_text) if lead_message else "",
                 "sent": (niche_name, lead.email, lead.phone) in sent_keys,
                 "current": current_business
                 and lead.email == current_business.email

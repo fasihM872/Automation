@@ -238,7 +238,14 @@
               <tr>
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.email or "None" }}</td>
-                <td>{{ lead.normalized_phone or "None" }}</td>
+                <td>
+                  <div class="phone-action">
+                    <span>{{ lead.normalized_phone or "None" }}</span>
+                    {% if lead.whatsapp_url %}
+                    <a class="mini-action" href="{{ lead.whatsapp_url }}" target="_blank" rel="noopener">Open</a>
+                    {% endif %}
+                  </div>
+                </td>
                 <td>
                   <span class="pill {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}queued{% endif %}">
                     {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}today{% else %}pending{% endif %}
