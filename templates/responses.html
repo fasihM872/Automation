@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musharp Automation | Responses</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <div>
+        <strong>Musharp Automation</strong>
+        <span>Campaign mail workspace</span>
+      </div>
+    </a>
+    <nav class="main-nav">
+      <a href="/">Campaigns</a>
+      <a href="/results">Results</a>
+      <a href="/follow-ups">Follow-ups</a>
+      <a class="active" href="/responses">Responses</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <header class="page-hero">
+      <div>
+        <p class="eyebrow">Inbox replies</p>
+        <h1>Responses</h1>
+      </div>
+    </header>
+
+    {% if run_result %}
+    <section class="panel output-panel {% if run_result.ok %}success{% else %}failed{% endif %}">
+      <div class="panel-heading">
+        <h2>Response Output</h2>
+        <span>{{ "Completed" if run_result.ok else "Stopped" }}</span>
+      </div>
+      <pre>{{ run_result.output }}</pre>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Matched Replies</h2>
+        <span>{{ rows|length }} responses</span>
+      </div>
+      {% if rows %}
+      <div class="response-list">
+        {% for row in rows %}
+        <article class="response-item">
+          <div class="response-meta">
+            <div>
+              <strong>{{ row.from_name }}</strong>
+              <span>{{ row.from_email }}</span>
+            </div>
+            <time>{{ row.received_at or "Unknown" }}</time>
+          </div>
+          <h3>{{ row.subject }}</h3>
+          <pre>{{ row.preview }}</pre>
+          <div class="response-context">
+            Sent campaign: {{ row.contact.niche }} / {{ row.contact.template_name }}
+          </div>
+          <form class="reply-form" method="post" action="/responses/send">
+            <input type="hidden" name="to_email" value="{{ row.from_email }}">
+            <input type="hidden" name="subject" value="{{ row.subject }}">
+            <textarea name="body" rows="5" placeholder="Write your reply to {{ row.from_name }}"></textarea>
+            <button type="submit">Send Reply</button>
+          </form>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">No replies found from contacts in your sent email log.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

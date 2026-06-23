@@ -3,3 +3,4 @@ python-dotenv
 twilio
 openpyxl
 flask
+psycopg[binary]

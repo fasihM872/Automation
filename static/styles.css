@@ -83,6 +83,7 @@ a {
 
 .main-nav {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 5px;
   border: 1px solid var(--line);
@@ -404,6 +405,23 @@ input[type="file"] {
   color: #fff;
 }
 
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-row form {
+  margin: 0;
+}
+
+.muted-text {
+  color: var(--muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
 .check-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -612,6 +630,62 @@ tr:last-child td {
 .log-row span {
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.response-list {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.response-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.response-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.response-meta div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.response-meta span,
+.response-meta time,
+.response-context {
+  color: var(--muted);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.response-item h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.response-item pre {
+  max-height: 220px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: #10211a;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.reply-form {
+  display: grid;
+  gap: 10px;
 }
 
 .empty {

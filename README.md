@@ -30,6 +30,22 @@ Install dependencies:
 python -m pip install -r requirements.txt
 ```
 
+## Database
+
+The app stores uploaded leads and send progress in a database.
+
+Local development uses SQLite automatically:
+
+```text
+data/automation.db
+```
+
+For Render, set `DATABASE_URL` to a Render Postgres connection string. Render
+Free web services have an ephemeral filesystem, so local SQLite databases and
+uploaded files are lost when the service restarts, redeploys, or spins down.
+Using Postgres lets the app remember uploaded leads and who has already been
+sent each day.
+
 Create a `.env` file from `.env.example`:
 
 ```powershell

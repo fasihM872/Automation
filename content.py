@@ -1,8 +1,10 @@
 """Turn a business + an assigned template into a ready-to-send email and WhatsApp message."""
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup, escape
 
 import config
 
@@ -12,6 +14,7 @@ _env = Environment(
 )
 
 _PREVIEW_CID = "tplpreview"
+_URL_RE = re.compile(r"(https?://[^\s<]+)")
 
 
 @dataclass
@@ -32,6 +35,21 @@ def _fill(text, business, template, niche_name):
         template_name=template["name"],
         template_url=template["url"],
     )
+
+
+def _linkify(text):
+    parts = []
+    last = 0
+    for match in _URL_RE.finditer(text):
+        parts.append(escape(text[last : match.start()]))
+        url = match.group(0).rstrip(".,)")
+        trailing = match.group(0)[len(url) :]
+        safe_url = escape(url)
+        parts.append(Markup(f'<a href="{safe_url}" target="_blank" rel="noopener">{safe_url}</a>'))
+        parts.append(escape(trailing))
+        last = match.end()
+    parts.append(escape(text[last:]))
+    return Markup("").join(parts)
 
 
 def _resolve_preview(template):
@@ -63,7 +81,7 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
     preview_src, inline_images = _resolve_preview(template)
 
     html_body = _env.get_template("pitch_email.html").render(
-        intro_paragraphs=[p for p in intro.split("\n\n") if p.strip()],
+        intro_paragraphs=[_linkify(p.strip()) for p in intro.split("\n\n") if p.strip()],
         template_name=template["name"],
         template_url=template["url"],
         preview_src=preview_src,
