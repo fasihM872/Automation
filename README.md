@@ -1,9 +1,11 @@
-# Web Automation Promotion Sender
+# Email Automations
 
-Python outreach tool for sending promotional email and WhatsApp messages from a
-lead list.
+Musharp Automation is a Python outreach tool for sending promotional email from
+uploaded lead files, managing daily campaign queues, tracking sent mail results,
+and sending follow-up emails.
 
-The current active campaign is `solar` for FRZ Energy.
+The current active campaign is `solar`, displayed in the frontend as
+`Website Automation`.
 
 ## Project Structure
 
