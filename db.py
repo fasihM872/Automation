@@ -194,6 +194,16 @@ def get_pending_leads(niche, limit=None):
         return _rows(cursor)
 
 
+def delete_pending_leads_by_source(niche, source_name):
+    init_db()
+    with connect() as conn:
+        _execute(
+            conn,
+            "DELETE FROM leads WHERE niche = ? AND source_name = ? AND status != 'sent'",
+            (niche, source_name),
+        )
+
+
 def sent_today_count(niche, today):
     init_db()
     with connect() as conn:

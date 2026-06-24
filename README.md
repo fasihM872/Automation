@@ -4,8 +4,7 @@ Musharp Automation is a Python outreach tool for sending promotional email from
 uploaded lead files, managing daily campaign queues, tracking sent mail results,
 and sending follow-up emails.
 
-The current active campaign is `solar`, displayed in the frontend as
-`Website Automation`.
+The current active campaign is `dentists`.
 
 ## Project Structure
 
@@ -59,7 +58,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-SENDER_NAME=FRZ Energy
+SENDER_NAME=Musharp Automation
 SENDER_EMAIL=your-email@gmail.com
 REPLY_TO=your-email@gmail.com
 
@@ -72,25 +71,10 @@ TWILIO_MEDIA_URL=
 `TWILIO_MEDIA_URL` must be a public HTTPS URL. Twilio cannot send WhatsApp media
 from a local file path.
 
-## Current Lead
+## Current Leads
 
-The current solar lead file is:
-
-```text
-data/leads_solar.csv
-```
-
-It contains:
-
-```text
-Fasih Jamal, fasihjamal30@gmail.com, 03136620237
-```
-
-The phone is normalized to:
-
-```text
-+923136620237
-```
+The app includes sample lead files for the remaining campaigns under `data/`.
+You can also upload CSV/XLSX lead files from the dashboard.
 
 ## Commands
 
@@ -172,14 +156,7 @@ Campaigns live in `config.py` under `NICHES`.
 The active campaign is:
 
 ```python
-ACTIVE_NICHE = "solar"
-```
-
-The solar campaign uses:
-
-```text
-assets/frz-energy-solar.jpeg
-https://www.frzenergy.store
+ACTIVE_NICHE = "dentists"
 ```
 
 ## Safety Notes

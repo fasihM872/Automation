@@ -1,39 +1,48 @@
-{# Pitch email. Inline styles only — email clients ignore <style> blocks. #}
-<div style="font-family: Arial, Helvetica, sans-serif; color:#222222; max-width:560px; margin:0 auto; line-height:1.6; font-size:15px;">
-  {% for p in intro_paragraphs %}
-  <p style="margin:0 0 14px;">{{ p|safe }}</p>
-  {% endfor %}
+{# Niche-aware pitch email. Inline styles only; email clients ignore most <style> blocks. #}
+<div style="margin:0; padding:0; background:#f4f7f6;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; background:#f4f7f6;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px; border-collapse:collapse; background:#ffffff; border:1px solid #dde6e2; border-radius:10px; overflow:hidden; font-family:Arial, Helvetica, sans-serif; color:#1d2725;">
+          <tr>
+            <td style="padding:24px 28px; background:{{ theme.accent }}; color:#ffffff;">
+              <div style="font-size:12px; font-weight:bold; letter-spacing:.04em; text-transform:uppercase; opacity:.9;">{{ theme.label }}</div>
+              <div style="margin-top:8px; font-size:24px; line-height:1.25; font-weight:bold;">{{ theme.heading }}</div>
+            </td>
+          </tr>
 
-  {% if preview_src %}
-  <p style="margin:18px 0;">
-    <a href="{{ template_url }}" target="_blank" rel="noopener">
-      <img src="{{ preview_src }}" alt="{{ template_name }} preview"
-           style="width:100%; max-width:560px; border:1px solid #e3e3e3; border-radius:8px;">
-    </a>
-  </p>
-  {% endif %}
+          <tr>
+            <td style="padding:26px 28px 8px; font-size:15px; line-height:1.65;">
+              {% if intro_html %}
+              {{ intro_html|safe }}
+              {% else %}
+              {% for p in intro_paragraphs %}
+              <p style="margin:0 0 14px;">{{ p|safe }}</p>
+              {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
 
-  <p style="margin:22px 0;">
-    <a href="{{ template_url }}" target="_blank" rel="noopener"
-       style="background:#1d9e75; color:#ffffff; text-decoration:none; padding:12px 22px;
-              border-radius:8px; display:inline-block; font-weight:bold;">
-      View the {{ template_name }} demo
-    </a>
-  </p>
+          {% if preview_src %}
+          <tr>
+            <td style="padding:8px 28px 22px;">
+              <img src="{{ preview_src }}" alt="{{ template_name }} preview" style="display:block; width:100%; max-width:564px; border:1px solid #dfe7e4; border-radius:8px;">
+            </td>
+          </tr>
+          {% endif %}
 
-  <p style="margin:0 0 14px;">
-    If it looks like a fit, just reply to this email and I'll get your site built.
-    Happy to adjust colours, text or layout to match your brand.
-  </p>
-
-  <p style="margin:24px 0 0; color:#555555;">&mdash; {{ sender_name }}<br>{{ sender_email }}</p>
-
-  <hr style="border:none; border-top:1px solid #eeeeee; margin:24px 0 12px;">
-  <p style="font-size:12px; color:#999999; margin:0;">
-    You received this because your business is publicly listed. Reply with "STOP" and I won't contact you again.
-  </p>
+          <tr>
+            <td style="padding:20px 28px 24px; border-top:1px solid #e7eeeb; background:#fbfcfc;">
+              <p style="margin:0 0 4px; color:#5d6966; font-size:14px;">Regards,</p>
+              <p style="margin:0; color:#1d2725; font-size:16px; font-weight:bold;">{{ theme.footer_name }}</p>
+              <p style="margin:3px 0 0; color:#5d6966; font-size:14px;">{{ theme.footer_role }}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
   {% if tracking_pixel_url %}
-  <img src="{{ tracking_pixel_url }}" alt="" width="1" height="1"
-       style="display:block; width:1px; height:1px; border:0; opacity:0;">
+  <img src="{{ tracking_pixel_url }}" alt="" width="1" height="1" style="display:block; width:1px; height:1px; border:0; opacity:0;">
   {% endif %}
 </div>

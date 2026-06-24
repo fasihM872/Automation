@@ -83,6 +83,14 @@ def _rel(path):
         return str(path)
 
 
+def _is_relative_to(path, parent):
+    try:
+        Path(path).resolve().relative_to(Path(parent).resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def _read_sent_rows():
     try:
         db_rows = db.get_sent_rows()
@@ -459,6 +467,10 @@ def _campaign_upload_dir(niche_name):
     return UPLOAD_DIR / secure_filename(niche_name)
 
 
+def _allowed_upload_dirs(niche_name):
+    return [UPLOAD_DIR.resolve(), _campaign_upload_dir(niche_name).resolve()]
+
+
 def _campaign_image_dir(niche_name):
     return IMAGE_DIR / secure_filename(niche_name)
 
@@ -547,10 +559,16 @@ def _available_sheets(niche_name, niche_cfg):
             "name": Path(niche_cfg["sheet"]).name,
         }
     ]
-    upload_dir = _campaign_upload_dir(niche_name)
-    if upload_dir.exists():
+    seen = set()
+    for upload_dir in (UPLOAD_DIR, _campaign_upload_dir(niche_name)):
+        if not upload_dir.exists():
+            continue
         for path in sorted(upload_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True):
             if path.suffix.lower() in ALLOWED_LEAD_EXTENSIONS:
+                resolved = path.resolve()
+                if resolved in seen:
+                    continue
+                seen.add(resolved)
                 sheets.append(
                     {
                         "label": f"Uploaded: {path.name}",
@@ -594,13 +612,13 @@ def _resolve_sheet(niche_name, niche_cfg, requested_sheet=None):
     try:
         resolved = candidate.resolve()
         allowed = [default_sheet.resolve()]
-        upload_dir = _campaign_upload_dir(niche_name)
-        if upload_dir.exists():
-            allowed.extend(
-                path.resolve()
-                for path in upload_dir.iterdir()
-                if path.suffix.lower() in ALLOWED_LEAD_EXTENSIONS
-            )
+        for upload_dir in (UPLOAD_DIR, _campaign_upload_dir(niche_name)):
+            if upload_dir.exists():
+                allowed.extend(
+                    path.resolve()
+                    for path in upload_dir.iterdir()
+                    if path.suffix.lower() in ALLOWED_LEAD_EXTENSIONS
+                )
         if resolved in allowed:
             return resolved
     except OSError:
@@ -636,10 +654,6 @@ def _message_config(niche_name, niche_cfg, email_subject=None, email_intro=None,
         copied["email_subject"] = email_subject
     if email_intro:
         copied["email_intro"] = email_intro
-    template_url = (request.values.get("template_url") or "").strip()
-    if template_url:
-        for template in copied["templates"]:
-            template["url"] = template_url
     image = _resolve_image(niche_name, preview_image)
     if image is not None:
         for template in copied["templates"]:
@@ -717,14 +731,12 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     niche_cfg = _message_config(niche_name, base_niche_cfg, draft_subject, draft_intro, preview_image)
     templates = niche_cfg.get("templates", [])
 
-    sender_name = os.getenv("SENDER_NAME", "FRZ Energy")
-    sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "info@frzenergy.store"))
+    sender_name = os.getenv("SENDER_NAME", "Musharp Automation")
+    sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", ""))
     sample_business = current_business
     sample_message = None
-    template_url = current_template.get("url", "") if current_template else ""
     if sample_business and templates:
         sample_message = build_message(sample_business, templates[0], niche_cfg, niche_name, sender_name, sender_email)
-        template_url = sample_message.template_url
 
     enriched_leads = []
     for lead in leads:
@@ -763,7 +775,6 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "selected_image": preview_image or "__default__",
         "email_subject": niche_cfg.get("email_subject", ""),
         "email_intro": niche_cfg.get("email_intro", ""),
-        "template_url": template_url,
         "current_business": current_business,
         "daily_queue": daily_queue,
         "daily_limit": DAILY_EMAIL_LIMIT,
@@ -833,7 +844,7 @@ def upload_leads():
     try:
         leads = list(load_leads(saved_path))
         lead_count = len(leads)
-        import_result = db.import_leads(niche_name, original_name, leads)
+        import_result = db.import_leads(niche_name, saved_path.name, leads)
     except Exception as exc:
         saved_path.unlink(missing_ok=True)
         return render_template(
@@ -853,8 +864,8 @@ def upload_image():
     if niche_name not in config.NICHES:
         niche_name = config.ACTIVE_NICHE
 
-    uploaded = request.files.get("email_image")
-    if not uploaded or not uploaded.filename:
+    uploaded_files = [file for file in request.files.getlist("email_image") if file and file.filename]
+    if not uploaded_files:
         return render_template(
             "dashboard.html",
             **_build_dashboard(niche_name, request.form.get("sheet")),
@@ -862,28 +873,32 @@ def upload_image():
             upload_result={"ok": False, "message": "Choose an email image first."},
         )
 
-    original_name = secure_filename(uploaded.filename)
-    suffix = Path(original_name).suffix.lower()
-    if suffix not in ALLOWED_IMAGE_EXTENSIONS:
-        return render_template(
-            "dashboard.html",
-            **_build_dashboard(niche_name, request.form.get("sheet")),
-            run_result=None,
-            upload_result={"ok": False, "message": "Images must be .jpg, .jpeg, .png, .webp, or .gif."},
-        )
-
     image_dir = _campaign_image_dir(niche_name)
     image_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    saved_path = image_dir / f"{Path(original_name).stem}-{stamp}{suffix}"
-    uploaded.save(saved_path)
+    saved_paths = []
+    for index, uploaded in enumerate(uploaded_files, start=1):
+        original_name = secure_filename(uploaded.filename)
+        suffix = Path(original_name).suffix.lower()
+        if suffix not in ALLOWED_IMAGE_EXTENSIONS:
+            return render_template(
+                "dashboard.html",
+                **_build_dashboard(niche_name, request.form.get("sheet")),
+                run_result=None,
+                upload_result={"ok": False, "message": "Images must be .jpg, .jpeg, .png, .webp, or .gif."},
+            )
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        saved_path = image_dir / f"{Path(original_name).stem}-{stamp}-{index}{suffix}"
+        uploaded.save(saved_path)
+        saved_paths.append(saved_path)
+
+    selected_path = saved_paths[0]
     return redirect(
         url_for(
             "dashboard",
             niche=niche_name,
             sheet=request.form.get("sheet"),
-            image=_rel(saved_path),
-            image_uploaded=saved_path.name,
+            image=_rel(selected_path),
+            image_uploaded=f"{len(saved_paths)} image{'s' if len(saved_paths) != 1 else ''}",
         )
     )
 
@@ -897,8 +912,10 @@ def delete_upload():
     sheet = request.form.get("sheet", "")
     path = _resolve_sheet(niche_name, config.NICHES[niche_name], sheet)
     try:
-        path.resolve().relative_to(_campaign_upload_dir(niche_name).resolve())
-    except ValueError:
+        resolved = path.resolve()
+        if not any(_is_relative_to(resolved, directory) for directory in _allowed_upload_dirs(niche_name)):
+            raise ValueError
+    except (OSError, ValueError):
         return render_template(
             "dashboard.html",
             **_build_dashboard(niche_name, sheet),
@@ -907,6 +924,7 @@ def delete_upload():
         )
 
     deleted_name = path.name
+    db.delete_pending_leads_by_source(niche_name, deleted_name)
     path.unlink(missing_ok=True)
     return redirect(url_for("dashboard", niche=niche_name, deleted=deleted_name))
 
@@ -963,9 +981,6 @@ def run_campaign():
         args.extend(["--email-subject", email_subject])
     if email_intro:
         args.extend(["--email-intro", email_intro])
-    template_url = request.form.get("template_url", "").strip()
-    if template_url:
-        args.extend(["--template-url", template_url])
     if resolved_image is not None:
         if resolved_image:
             args.extend(["--preview-image", resolved_image])

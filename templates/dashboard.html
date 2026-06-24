@@ -97,9 +97,9 @@
         <form class="upload-form" method="post" action="/upload-image" enctype="multipart/form-data">
           <input type="hidden" name="niche" value="{{ active_niche }}">
           <input type="hidden" name="sheet" value="{{ sheet }}">
-          <label for="email_image">Add Email Image</label>
+          <label for="email_image">Add Email Images</label>
           <div class="upload-row">
-            <input id="email_image" name="email_image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">
+            <input id="email_image" name="email_image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" multiple>
             <button type="submit">Upload</button>
           </div>
         </form>
@@ -128,12 +128,19 @@
           </div>
           <div class="field">
             <label for="email_intro">Cover letter</label>
-            <textarea id="email_intro" name="email_intro" rows="8">{{ email_intro }}</textarea>
-            <p class="form-note">Use {template_url} in the cover letter to insert a clickable demo link.</p>
-          </div>
-          <div class="field">
-            <label for="template_url">Template link</label>
-            <input id="template_url" name="template_url" type="url" value="{{ template_url }}" placeholder="https://example.com/demo">
+            <div class="html-editor" data-cover-editor>
+              <div class="editor-toolbar" role="toolbar" aria-label="Cover letter tools">
+                <button type="button" data-mode="visual" class="active">Visual</button>
+                <button type="button" data-mode="source">HTML</button>
+                <button type="button" data-wrap="<strong>|</strong>">B</button>
+                <button type="button" data-wrap="<em>|</em>">I</button>
+                <button type="button" data-insert="{business_name}">Business</button>
+                <button type="button" data-insert="{template_url}">Demo URL</button>
+              </div>
+              <div id="email_intro_visual" class="visual-editor" contenteditable="true" aria-label="Visual cover letter editor"></div>
+              <textarea id="email_intro" name="email_intro" rows="8">{{ email_intro }}</textarea>
+            </div>
+            <p class="form-note">Paste or edit HTML here. Plain text still works.</p>
           </div>
           <div class="field">
             <label for="preview_image">Email image</label>
@@ -142,7 +149,7 @@
               <option value="{{ image.value }}" {% if image.value == selected_image %}selected{% endif %}>{{ image.label }}</option>
               {% endfor %}
             </select>
-            <p class="form-note">Choose the image embedded in the email. The image is also linked to the template link above.</p>
+            <p class="form-note">Choose the image embedded in the email.</p>
           </div>
           <div class="check-grid">
             <label><input type="checkbox" name="preview" checked> Write email preview</label>
@@ -318,5 +325,97 @@
       </div>
     </section>
   </main>
+  <script>
+    (function () {
+      const editor = document.querySelector("[data-cover-editor]");
+      if (!editor) return;
+
+      const textarea = editor.querySelector("textarea");
+      const visual = editor.querySelector(".visual-editor");
+      const modeButtons = editor.querySelectorAll("[data-mode]");
+      const actionButtons = editor.querySelectorAll("[data-insert], [data-wrap]");
+      let mode = "visual";
+
+      function plainTextToHtml(value) {
+        return value
+          .split(/\n{2,}/)
+          .filter(Boolean)
+          .map((paragraph) => `<p>${paragraph.replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;"
+          }[char])).replace(/\n/g, "<br>")}</p>`)
+          .join("");
+      }
+
+      function looksLikeHtml(value) {
+        return /<[a-z][\s\S]*>/i.test(value);
+      }
+
+      function setMode(nextMode) {
+        if (mode === "visual") textarea.value = visual.innerHTML.trim();
+        mode = nextMode;
+        visual.hidden = mode !== "visual";
+        textarea.hidden = mode !== "source";
+        modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+        if (mode === "visual") {
+          visual.innerHTML = looksLikeHtml(textarea.value) ? textarea.value : plainTextToHtml(textarea.value);
+          visual.focus();
+        } else {
+          textarea.focus();
+        }
+      }
+
+      function insertAtTextarea(value) {
+        const start = textarea.selectionStart || 0;
+        const end = textarea.selectionEnd || 0;
+        textarea.value = textarea.value.slice(0, start) + value + textarea.value.slice(end);
+        textarea.setSelectionRange(start + value.length, start + value.length);
+      }
+
+      function wrapSelection(template) {
+        if (mode === "visual") {
+          document.execCommand(template.includes("strong") ? "bold" : "italic");
+          visual.focus();
+          return;
+        }
+        const start = textarea.selectionStart || 0;
+        const end = textarea.selectionEnd || 0;
+        const selected = textarea.value.slice(start, end) || "text";
+        const value = template.replace("|", selected);
+        textarea.value = textarea.value.slice(0, start) + value + textarea.value.slice(end);
+        textarea.setSelectionRange(start, start + value.length);
+      }
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+
+      actionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.insert) {
+            if (mode === "visual") {
+              document.execCommand("insertText", false, button.dataset.insert);
+              visual.focus();
+            } else {
+              insertAtTextarea(button.dataset.insert);
+              textarea.focus();
+            }
+          }
+          if (button.dataset.wrap) wrapSelection(button.dataset.wrap);
+        });
+      });
+
+      document.querySelectorAll("form.run-form").forEach((form) => {
+        form.addEventListener("submit", () => {
+          if (mode === "visual") textarea.value = visual.innerHTML.trim();
+        });
+      });
+
+      setMode("visual");
+    })();
+  </script>
 </body>
 </html>

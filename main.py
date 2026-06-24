@@ -179,7 +179,7 @@ def make_email_sender():
         port=os.getenv("SMTP_PORT", "587"),
         username=os.getenv("SMTP_USERNAME"),
         password=os.getenv("SMTP_PASSWORD"),
-        sender_name=os.getenv("SENDER_NAME", "FRZ Energy"),
+        sender_name=os.getenv("SENDER_NAME", "Musharp Automation"),
         sender_email=os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "")),
         reply_to=os.getenv("REPLY_TO"),
     )
@@ -296,8 +296,8 @@ def run(args):
 
     sent = load_sent(config.SENT_LOG)
     templates = cycle(niche_cfg["templates"])
-    sender_name = os.getenv("SENDER_NAME", "FRZ Energy")
-    sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "info@frzenergy.store"))
+    sender_name = os.getenv("SENDER_NAME", "Musharp Automation")
+    sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", ""))
     tracking_base_url = _tracking_base_url(args)
 
     email_sender = None if args.no_email or dry_run else make_email_sender()

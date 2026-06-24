@@ -39,31 +39,6 @@ COLUMN_MAP = {
 # Placeholders you can use in email_subject / email_intro / whatsapp_message:
 #   {business_name}  {niche}  {template_name}  {template_url}
 NICHES = {
-    "solar": {
-        "sheet": DATA_DIR / "leads_solar.csv",
-        "templates": [
-            {
-                "name": "Website Automation",
-                "url": "https://www.frzenergy.store",
-                "preview_image": "assets/frz-energy-solar.jpeg",
-            },
-        ],
-        "email_subject": "Top solar brands under one roof",
-        "email_intro": (
-            "Hi {business_name},\n\n"
-            "FRZ Energy offers residential, commercial, and industrial solar solutions "
-            "with trusted brands including GoodWe, Huawei, Solis, Sunwoda, Sofar, Jinko, "
-            "Canadian Solar, Longi, and JA Solar.\n\n"
-            "You can view the details here:"
-        ),
-        "whatsapp_message": (
-            "Hi {business_name}, FRZ Energy offers residential, commercial, and industrial "
-            "solar solutions with top brands under one roof.\n\n"
-            "GoodWe, Huawei, Solis, Sunwoda, Sofar, Jinko, Canadian Solar, Longi, and JA Solar.\n\n"
-            "Visit: {template_url}\nCall/WhatsApp: 0333-4541022\n\n"
-            "Reply STOP to opt out."
-        ),
-    },
     "dentists": {
         "sheet": DATA_DIR / "leads_dentists.csv",
         "templates": [
@@ -73,9 +48,12 @@ NICHES = {
         ],
         "email_subject": "A free website preview for {business_name}",
         "email_intro": (
-            "Hi {business_name} team,\n\n"
-            "I build websites for {niche} and put together a demo I think would suit your "
-            "business — no cost and no obligation to look. Here it is:"
+            "I have come across ur business {business_name} and noticed that a clean, "
+            "mobile-friendly website could help patients quickly find your services, timings, "
+            "location, and contact details.\n\n"
+            "I can build a professional website for your dental clinic for $200. "
+            "I am also giving free chatbot services. "
+            "Here is a demo style you can review:"
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for {niche} and made a quick demo for you: "
@@ -92,10 +70,12 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "Hi {business_name} team,\n\n"
-            "I build fast, mobile-friendly websites for plumbing businesses that make it easy "
-            "for customers to call, request urgent service, and see the areas you cover.\n\n"
-            "I put together a demo style that could fit your business:"
+            "I have come across ur business {business_name} and noticed that a fast, "
+            "mobile-friendly website could help customers call you quickly, request urgent "
+            "service, and see the areas you cover.\n\n"
+            "I can build a professional website for your plumbing business for $200. "
+            "I am also giving free chatbot services. "
+            "Here is a demo style you can review:"
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for plumbing businesses and made a quick demo: "
@@ -112,10 +92,12 @@ NICHES = {
         ],
         "email_subject": "A modern website preview for {business_name}",
         "email_intro": (
-            "Hi {business_name} team,\n\n"
-            "I build clear, professional websites for hospitals and clinics so patients can "
-            "quickly find departments, doctors, timings, location, and appointment options.\n\n"
-            "Here is a demo layout you can review:"
+            "I have come across ur business {business_name} and noticed that a clear, "
+            "professional website could help patients find departments, doctors, timings, "
+            "location, and appointment options more easily.\n\n"
+            "I can build a professional website for your hospital or clinic for $200. "
+            "I am also giving free chatbot services. "
+            "Here is a demo style you can review:"
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for hospitals and clinics. Here is a demo: "
@@ -132,10 +114,12 @@ NICHES = {
         ],
         "email_subject": "A warm website preview for {business_name}",
         "email_intro": (
-            "Hi {business_name} team,\n\n"
-            "I build calm, trustworthy websites for care homes that help families understand "
-            "your services, rooms, visiting options, care approach, and how to arrange a visit.\n\n"
-            "I created a demo style you can review here:"
+            "I have come across ur business {business_name} and noticed that a calm, "
+            "trustworthy website could help families understand your care services, rooms, "
+            "visiting options, and how to arrange a visit.\n\n"
+            "I can build a professional website for your care home for $200. "
+            "I am also giving free chatbot services. "
+            "Here is a demo style you can review:"
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for care homes and senior living services. "
@@ -152,10 +136,12 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "Hi {business_name} team,\n\n"
-            "I build clean websites for pharmacies so customers can find opening hours, "
-            "services, prescription information, delivery options, and contact details quickly.\n\n"
-            "Here is a demo style that could work for you:"
+            "I have come across ur business {business_name} and noticed that a clean, "
+            "mobile-friendly website could help customers find opening hours, services, "
+            "prescription information, delivery options, and contact details quickly.\n\n"
+            "I can build a professional website for your pharmacy for $200. "
+            "I am also giving free chatbot services. "
+            "Here is a demo style you can review:"
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for pharmacies and made a quick demo: "
@@ -165,4 +151,4 @@ NICHES = {
     },
 }
 
-ACTIVE_NICHE = "solar"
+ACTIVE_NICHE = "dentists"
