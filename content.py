@@ -17,6 +17,7 @@ _env = Environment(
 _PREVIEW_CID = "tplpreview"
 _URL_RE = re.compile(r"(https?://[^\s<]+)")
 _TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+_SAMPLE_BUSINESS_RE = re.compile(r"(?<![\w/@.-])musharp(?![\w@.-])")
 _NICHE_THEMES = {
     "dentists": {
         "label": "Dental Website Preview",
@@ -65,15 +66,19 @@ class Message:
     template_name: str
     template_url: str
     inline_images: list = field(default_factory=list)   # [(content_id, filepath)] embedded in the email
+    attachments: list = field(default_factory=list)     # file paths attached to the email
 
 
 def _fill(text, business, template, niche_name):
-    return text.format(
-        business_name=business.name,
-        niche=niche_name,
-        template_name=template["name"],
-        template_url=template["url"],
-    )
+    replacements = {
+        "{business_name}": business.name,
+        "{niche}": niche_name,
+        "{template_name}": template["name"],
+        "{template_url}": template["url"],
+    }
+    for token, value in replacements.items():
+        text = text.replace(token, value)
+    return _SAMPLE_BUSINESS_RE.sub(business.name, text)
 
 
 def _linkify(text):
@@ -119,22 +124,34 @@ def _html_to_text(html):
 def _resolve_preview(template):
     """
     Decide how to show the template screenshot in the email.
-      - a URL (http/https)        -> used directly as the <img src>
-      - a local file that exists  -> embedded inline via cid: (works in email clients)
+      - a URL (http/https)        -> not embedded in the body
+      - a local file that exists  -> attached to the email
       - missing / not found yet   -> no image (the email still sends fine)
-    Returns (preview_src, inline_images).
+    Returns (preview_src, inline_images, attachments).
     """
     raw = (template.get("preview_image") or "").strip()
     if not raw:
-        return "", []
+        return "", [], []
     if raw.lower().startswith(("http://", "https://")):
-        return raw, []
+        return "", [], []
     path = Path(raw)
     if not path.is_absolute():
         path = config.BASE_DIR / path
     if path.exists():
-        return f"cid:{_PREVIEW_CID}", [(_PREVIEW_CID, str(path))]
+        return "", [], [str(path)]
     return "", []   # local path given but file isn't there yet — skip rather than break the email
+
+
+def _resolve_preview(template):
+    raw = (template.get("preview_image") or "").strip()
+    if not raw or raw.lower().startswith(("http://", "https://")):
+        return "", [], []
+    path = Path(raw)
+    if not path.is_absolute():
+        path = config.BASE_DIR / path
+    if path.exists():
+        return "", [], [str(path)]
+    return "", [], []
 
 
 def build_message(business, template, niche_cfg, niche_name, sender_name, sender_email, tracking_pixel_url=""):
@@ -144,13 +161,10 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
     intro_html = Markup(intro) if _looks_like_html(intro) else ""
     intro_paragraphs = [] if intro_html else [_linkify(p.strip()) for p in intro.split("\n\n") if p.strip()]
 
-    preview_src, inline_images = _resolve_preview(template)
-    theme = _NICHE_THEMES.get(niche_name, _NICHE_THEMES["plumber"])
-
+    preview_src, inline_images, attachments = _resolve_preview(template)
     html_body = _env.get_template("pitch_email.html").render(
         intro_html=intro_html,
         intro_paragraphs=intro_paragraphs,
-        theme=theme,
         template_name=template["name"],
         template_url=template["url"],
         preview_src=preview_src,
@@ -160,7 +174,7 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
     )
 
     text_intro = _html_to_text(intro) if intro_html else intro
-    text_body = f"{text_intro}\n\nRegards,\n{theme['footer_name']}\n{theme['footer_role']}"
+    text_body = text_intro
 
     return Message(
         subject=subject,
@@ -170,4 +184,5 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
         template_name=template["name"],
         template_url=template["url"],
         inline_images=inline_images,
+        attachments=attachments,
     )

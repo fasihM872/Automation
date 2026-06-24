@@ -78,6 +78,8 @@
         <form class="upload-form" method="post" action="/upload" enctype="multipart/form-data">
           <input type="hidden" name="niche" value="{{ active_niche }}">
           <input type="hidden" name="sheet" value="{{ sheet }}">
+          <input type="hidden" name="email_subject" data-draft-subject>
+          <input type="hidden" name="email_intro" data-draft-intro>
           <label for="lead_file">Add Lead File</label>
           <div class="upload-row">
             <input id="lead_file" name="lead_file" type="file" accept=".csv,.xlsx,.xlsm">
@@ -97,6 +99,9 @@
         <form class="upload-form" method="post" action="/upload-image" enctype="multipart/form-data">
           <input type="hidden" name="niche" value="{{ active_niche }}">
           <input type="hidden" name="sheet" value="{{ sheet }}">
+          <input type="hidden" name="email_subject" data-draft-subject>
+          <input type="hidden" name="email_intro" data-draft-intro>
+          <input type="hidden" name="recipient_email" data-draft-recipient-email>
           <label for="email_image">Add Email Images</label>
           <div class="upload-row">
             <input id="email_image" name="email_image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" multiple>
@@ -126,21 +131,21 @@
             <label for="email_subject">Email subject</label>
             <input id="email_subject" name="email_subject" type="text" value="{{ email_subject }}">
           </div>
+          {% if current_business %}
           <div class="field">
-            <label for="email_intro">Cover letter</label>
+            <label for="recipient_email">Recipient email</label>
+            <input id="recipient_email" name="recipient_email" type="email" value="{{ current_business.email }}" placeholder="recipient@example.com">
+          </div>
+          {% endif %}
+          <div class="field">
+            <label for="email_intro">Niche email template</label>
             <div class="html-editor" data-cover-editor>
               <div class="editor-toolbar" role="toolbar" aria-label="Cover letter tools">
-                <button type="button" data-mode="visual" class="active">Visual</button>
-                <button type="button" data-mode="source">HTML</button>
-                <button type="button" data-wrap="<strong>|</strong>">B</button>
-                <button type="button" data-wrap="<em>|</em>">I</button>
-                <button type="button" data-insert="{business_name}">Business</button>
-                <button type="button" data-insert="{template_url}">Demo URL</button>
+                <span class="toolbar-label">{{ email_template_filename or "No template file found" }}</span>
               </div>
-              <div id="email_intro_visual" class="visual-editor" contenteditable="true" aria-label="Visual cover letter editor"></div>
               <textarea id="email_intro" name="email_intro" rows="8">{{ email_intro }}</textarea>
             </div>
-            <p class="form-note">Paste or edit HTML here. Plain text still works.</p>
+            <p class="form-note">Loaded from the selected niche template. You can edit this HTML before sending.</p>
           </div>
           <div class="field">
             <label for="preview_image">Email image</label>
@@ -194,11 +199,13 @@
           <h2>Email Preview</h2>
           {% if sample_business %}<span>{{ sample_business.name }}</span>{% endif %}
         </div>
-        {% if sample_message %}
-        <div class="email-frame">{{ sample_message.html_body|safe }}</div>
-        {% else %}
-        <p class="empty">Add at least one lead and one template to preview the email.</p>
-        {% endif %}
+        <div class="cover-preview-shell">
+          <div class="subheading">
+            <h3>Template Visual</h3>
+            <span>{{ email_template_filename or "Missing" }}</span>
+          </div>
+          <iframe class="visual-editor cover-preview template-preview-frame" data-cover-preview data-business-name="{{ current_business.name if current_business else '' }}" title="Visual email template preview"></iframe>
+        </div>
       </div>
     </section>
 
@@ -235,7 +242,7 @@
       <div class="panel">
         <div class="panel-heading">
           <h2>Lead List</h2>
-          <span>{{ leads|length }} total</span>
+          <span>{{ visible_lead_count }} of {{ stats.lead_count }} shown</span>
         </div>
         <div class="table-wrap">
           <table>
@@ -331,10 +338,9 @@
       if (!editor) return;
 
       const textarea = editor.querySelector("textarea");
-      const visual = editor.querySelector(".visual-editor");
-      const modeButtons = editor.querySelectorAll("[data-mode]");
-      const actionButtons = editor.querySelectorAll("[data-insert], [data-wrap]");
-      let mode = "visual";
+      const visual = document.querySelector("[data-cover-preview]");
+      const subject = document.querySelector("#email_subject");
+      const recipientEmail = document.querySelector("#recipient_email");
 
       function plainTextToHtml(value) {
         return value
@@ -354,67 +360,56 @@
         return /<[a-z][\s\S]*>/i.test(value);
       }
 
-      function setMode(nextMode) {
-        if (mode === "visual") textarea.value = visual.innerHTML.trim();
-        mode = nextMode;
-        visual.hidden = mode !== "visual";
-        textarea.hidden = mode !== "source";
-        modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
-        if (mode === "visual") {
-          visual.innerHTML = looksLikeHtml(textarea.value) ? textarea.value : plainTextToHtml(textarea.value);
-          visual.focus();
+      function applyBusinessName(value) {
+        if (!visual || !visual.dataset.businessName) return value;
+        return value.replace(/(^|[^\w/@.-])musharp(?![\w@.-])/g, `$1${visual.dataset.businessName}`);
+      }
+
+      function resizePreviewFrame() {
+        if (!visual || visual.tagName !== "IFRAME") return;
+        try {
+          const doc = visual.contentDocument || visual.contentWindow.document;
+          if (!doc) return;
+          doc.documentElement.style.overflow = "hidden";
+          doc.body.style.overflow = "hidden";
+          const height = Math.max(
+            doc.body.scrollHeight,
+            doc.documentElement.scrollHeight,
+            doc.body.offsetHeight,
+            doc.documentElement.offsetHeight
+          );
+          visual.style.height = `${height}px`;
+        } catch (error) {
+          visual.style.height = "900px";
+        }
+      }
+
+      function renderPreview() {
+        if (!visual) return;
+        const value = textarea.value.trim();
+        const html = applyBusinessName(value ? (looksLikeHtml(value) ? value : plainTextToHtml(value)) : "");
+        if (visual.tagName === "IFRAME") {
+          visual.srcdoc = html;
+          visual.addEventListener("load", resizePreviewFrame, { once: true });
         } else {
-          textarea.focus();
+          visual.innerHTML = html;
         }
       }
 
-      function insertAtTextarea(value) {
-        const start = textarea.selectionStart || 0;
-        const end = textarea.selectionEnd || 0;
-        textarea.value = textarea.value.slice(0, start) + value + textarea.value.slice(end);
-        textarea.setSelectionRange(start + value.length, start + value.length);
-      }
+      textarea.addEventListener("input", renderPreview);
+      window.addEventListener("resize", resizePreviewFrame);
 
-      function wrapSelection(template) {
-        if (mode === "visual") {
-          document.execCommand(template.includes("strong") ? "bold" : "italic");
-          visual.focus();
-          return;
-        }
-        const start = textarea.selectionStart || 0;
-        const end = textarea.selectionEnd || 0;
-        const selected = textarea.value.slice(start, end) || "text";
-        const value = template.replace("|", selected);
-        textarea.value = textarea.value.slice(0, start) + value + textarea.value.slice(end);
-        textarea.setSelectionRange(start, start + value.length);
-      }
-
-      modeButtons.forEach((button) => {
-        button.addEventListener("click", () => setMode(button.dataset.mode));
-      });
-
-      actionButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          if (button.dataset.insert) {
-            if (mode === "visual") {
-              document.execCommand("insertText", false, button.dataset.insert);
-              visual.focus();
-            } else {
-              insertAtTextarea(button.dataset.insert);
-              textarea.focus();
-            }
-          }
-          if (button.dataset.wrap) wrapSelection(button.dataset.wrap);
-        });
-      });
-
-      document.querySelectorAll("form.run-form").forEach((form) => {
+      document.querySelectorAll("form.upload-form").forEach((form) => {
         form.addEventListener("submit", () => {
-          if (mode === "visual") textarea.value = visual.innerHTML.trim();
+          const subjectInput = form.querySelector("[data-draft-subject]");
+          const introInput = form.querySelector("[data-draft-intro]");
+          const recipientInput = form.querySelector("[data-draft-recipient-email]");
+          if (subjectInput && subject) subjectInput.value = subject.value;
+          if (introInput) introInput.value = textarea.value;
+          if (recipientInput && recipientEmail) recipientInput.value = recipientEmail.value;
         });
       });
-
-      setMode("visual");
+      renderPreview();
     })();
   </script>
 </body>

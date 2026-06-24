@@ -40,6 +40,15 @@
       <pre>{{ run_result.output }}</pre>
     </section>
     {% endif %}
+    {% if request.args.get("deleted") %}
+    <section class="panel output-panel success">
+      <div class="panel-heading">
+        <h2>Response Deleted</h2>
+        <span>Hidden</span>
+      </div>
+      <pre>{{ request.args.get("deleted") }} was removed from this response list.</pre>
+    </section>
+    {% endif %}
 
     <section class="panel">
       <div class="panel-heading">
@@ -67,6 +76,12 @@
             <input type="hidden" name="subject" value="{{ row.subject }}">
             <textarea name="body" rows="5" placeholder="Write your reply to {{ row.from_name }}"></textarea>
             <button type="submit">Send Reply</button>
+          </form>
+          <form method="post" action="/responses/delete" onsubmit="return confirm('Remove this response from the app?');">
+            <input type="hidden" name="response_id" value="{{ row.response_id }}">
+            <input type="hidden" name="from_email" value="{{ row.from_email }}">
+            <input type="hidden" name="subject" value="{{ row.subject }}">
+            <button class="danger-button" type="submit">Delete</button>
           </form>
         </article>
         {% endfor %}

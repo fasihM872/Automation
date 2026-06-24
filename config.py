@@ -48,12 +48,11 @@ NICHES = {
         ],
         "email_subject": "A free website preview for {business_name}",
         "email_intro": (
-            "I have come across ur business {business_name} and noticed that a clean, "
+            "we have came across ur business {business_name} and noticed that a clean, "
             "mobile-friendly website could help patients quickly find your services, timings, "
             "location, and contact details.\n\n"
             "I can build a professional website for your dental clinic for $200. "
-            "I am also giving free chatbot services. "
-            "Here is a demo style you can review:"
+            "I am also giving free chatbot services."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for {niche} and made a quick demo for you: "
@@ -70,12 +69,11 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "I have come across ur business {business_name} and noticed that a fast, "
+            "we have came across ur business {business_name} and noticed that a fast, "
             "mobile-friendly website could help customers call you quickly, request urgent "
             "service, and see the areas you cover.\n\n"
             "I can build a professional website for your plumbing business for $200. "
-            "I am also giving free chatbot services. "
-            "Here is a demo style you can review:"
+            "I am also giving free chatbot services."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for plumbing businesses and made a quick demo: "
@@ -92,12 +90,11 @@ NICHES = {
         ],
         "email_subject": "A modern website preview for {business_name}",
         "email_intro": (
-            "I have come across ur business {business_name} and noticed that a clear, "
+            "we have came across ur business {business_name} and noticed that a clear, "
             "professional website could help patients find departments, doctors, timings, "
             "location, and appointment options more easily.\n\n"
             "I can build a professional website for your hospital or clinic for $200. "
-            "I am also giving free chatbot services. "
-            "Here is a demo style you can review:"
+            "I am also giving free chatbot services."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for hospitals and clinics. Here is a demo: "
@@ -114,12 +111,11 @@ NICHES = {
         ],
         "email_subject": "A warm website preview for {business_name}",
         "email_intro": (
-            "I have come across ur business {business_name} and noticed that a calm, "
+            "we have came across ur business {business_name} and noticed that a calm, "
             "trustworthy website could help families understand your care services, rooms, "
             "visiting options, and how to arrange a visit.\n\n"
             "I can build a professional website for your care home for $200. "
-            "I am also giving free chatbot services. "
-            "Here is a demo style you can review:"
+            "I am also giving free chatbot services."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for care homes and senior living services. "
@@ -136,12 +132,11 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "I have come across ur business {business_name} and noticed that a clean, "
+            "we have came across ur business {business_name} and noticed that a clean, "
             "mobile-friendly website could help customers find opening hours, services, "
             "prescription information, delivery options, and contact details quickly.\n\n"
             "I can build a professional website for your pharmacy for $200. "
-            "I am also giving free chatbot services. "
-            "Here is a demo style you can review:"
+            "I am also giving free chatbot services."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for pharmacies and made a quick demo: "

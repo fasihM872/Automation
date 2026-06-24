@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import date, datetime
 from email.header import decode_header, make_header
 from email.utils import parseaddr, parsedate_to_datetime
@@ -14,7 +15,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from dotenv import dotenv_values, load_dotenv
-from flask import Flask, redirect, render_template, request, Response, send_from_directory, url_for
+from flask import Flask, redirect, render_template, request, Response, send_from_directory, session, url_for
 from werkzeug.utils import secure_filename
 
 import config
@@ -32,9 +33,12 @@ IMAGE_DIR = config.DATA_DIR / "email_images"
 RUN_DIR = config.DATA_DIR / "run_queue"
 TRACKING_LOG = config.DATA_DIR / "email_tracking.csv"
 OPEN_LOG = config.DATA_DIR / "email_opens.csv"
+IGNORED_RESPONSES_LOG = config.DATA_DIR / "ignored_responses.csv"
 ALLOWED_LEAD_EXTENSIONS = {".csv", ".xlsx", ".xlsm"}
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 DAILY_EMAIL_LIMIT = 5
+LEGACY_CAMPAIGN_RE = re.compile(r"\b(frz|frzenergy|solar)\b", re.IGNORECASE)
+LEAD_TABLE_LIMIT = 100
 SENT_FIELDNAMES = [
     "sent_at",
     "niche",
@@ -58,6 +62,7 @@ TRACKING_FIELDNAMES = [
     "subject",
 ]
 OPEN_FIELDNAMES = ["tracking_id", "opened_at", "ip", "user_agent"]
+IGNORED_RESPONSE_FIELDNAMES = ["response_id", "ignored_at", "from_email", "subject"]
 MAX_RESPONSES = 50
 PIXEL_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
@@ -117,6 +122,29 @@ def _write_csv_rows(path, rows, fieldnames):
         writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _ignored_response_ids():
+    return {row.get("response_id", "") for row in _read_csv_rows(IGNORED_RESPONSES_LOG) if row.get("response_id")}
+
+
+def _ignore_response(response_id, from_email="", subject=""):
+    response_id = (response_id or "").strip()
+    if not response_id:
+        return False
+    rows = _read_csv_rows(IGNORED_RESPONSES_LOG)
+    if any(row.get("response_id") == response_id for row in rows):
+        return True
+    rows.append(
+        {
+            "response_id": response_id,
+            "ignored_at": datetime.now().isoformat(timespec="seconds"),
+            "from_email": from_email,
+            "subject": subject,
+        }
+    )
+    _write_csv_rows(IGNORED_RESPONSES_LOG, rows, IGNORED_RESPONSE_FIELDNAMES)
+    return True
 
 
 def _append_open(tracking_id):
@@ -358,6 +386,10 @@ def _message_text(message):
     return ""
 
 
+def _is_legacy_campaign_text(*parts):
+    return any(LEGACY_CAMPAIGN_RE.search(part or "") for part in parts)
+
+
 def _response_since_date(contacts):
     dates = []
     for row in contacts.values():
@@ -381,6 +413,7 @@ def _fetch_responses():
     username = _env_value("IMAP_USERNAME") or _env_value("SMTP_USERNAME")
     password = _env_value("IMAP_PASSWORD") or _env_value("SMTP_PASSWORD")
     own_emails = _own_email_addresses()
+    ignored_ids = _ignored_response_ids()
     if "gmail.com" in host.lower():
         password = "".join(password.split())
     if not host or not username or not password:
@@ -401,6 +434,9 @@ def _fetch_responses():
             uids = data[0].split()
             responses = []
             for uid in reversed(uids[-300:]):
+                response_id = uid.decode("ascii", errors="ignore")
+                if response_id in ignored_ids:
+                    continue
                 status, fetched = mailbox.uid("fetch", uid, "(RFC822)")
                 if status != "OK" or not fetched:
                     continue
@@ -422,9 +458,17 @@ def _fetch_responses():
                     pass
                 contact = contacts[from_email]
                 body = _message_text(message)
+                if _is_legacy_campaign_text(
+                    subject,
+                    body,
+                    contact.get("niche", ""),
+                    contact.get("template_name", ""),
+                    contact.get("template_url", ""),
+                ):
+                    continue
                 responses.append(
                     {
-                        "response_id": uid.decode("ascii", errors="ignore"),
+                        "response_id": response_id,
                         "from_name": _decode_header(from_name) or contact.get("name") or from_email,
                         "from_email": from_email,
                         "subject": subject,
@@ -480,12 +524,14 @@ def _lead_key(niche_name, lead):
 
 
 def _business_from_db(row):
-    return Business(
+    business = Business(
         name=row.get("name") or "there",
         email=row.get("email", ""),
         phone=row.get("phone", ""),
         address=row.get("address", ""),
     )
+    business.db_id = row.get("id", "")
+    return business
 
 
 def _sent_today_count(niche_name, sent_rows):
@@ -530,6 +576,68 @@ def _write_single_lead_sheet(niche_name, business):
             }
         )
     return path
+
+
+def _write_run_text_file(prefix, text):
+    RUN_DIR.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w",
+        delete=False,
+        encoding="utf-8",
+        dir=RUN_DIR,
+        prefix=prefix,
+        suffix=".html",
+    ) as fh:
+        fh.write(text)
+        return Path(fh.name)
+
+
+def _stash_message_draft():
+    draft = {
+        "email_subject": request.form.get("email_subject", ""),
+        "email_intro": request.form.get("email_intro", ""),
+    }
+    if "recipient_email" in request.form:
+        draft["recipient_email"] = request.form.get("recipient_email", "")
+    session["message_draft"] = draft
+
+
+def _pop_message_draft():
+    return session.pop("message_draft", None)
+
+
+def _niche_email_template_path(niche_name):
+    candidates = [
+        f"{niche_name}.html",
+        f"{niche_name.replace('_', '-')}.html",
+        f"{niche_name.replace('_', '')}.html",
+    ]
+    aliases = {
+        "dentists": ["dentist.html", "dental.html"],
+        "plumber": ["plumbers.html", "plumbing.html"],
+        "hospital": ["hospitals.html", "healthcare.html"],
+        "care_homes": ["care-home.html", "carehomes.html", "care_home.html"],
+        "pharmacy": ["pharmacies.html"],
+    }
+    candidates.extend(aliases.get(niche_name, []))
+    template_dirs = [config.BASE_DIR / "email_templates"]
+    legacy_root = config.BASE_DIR / "email-template"
+    if legacy_root.exists():
+        template_dirs.append(legacy_root)
+        template_dirs.extend(path for path in legacy_root.iterdir() if path.is_dir())
+    for directory in template_dirs:
+        for name in candidates:
+            path = directory / name
+            if path.exists() and path.is_file():
+                return path
+    return None
+
+
+def _load_niche_email_template(niche_name):
+    path = _niche_email_template_path(niche_name)
+    if not path:
+        return "", ""
+    return path.read_text(encoding="utf-8"), path.name
 
 
 def _write_single_lead_row(niche_name, row, prefix="followup"):
@@ -587,18 +695,34 @@ def _available_images(niche_name):
     ]
     image_dir = _campaign_image_dir(niche_name)
     if image_dir.exists():
-        for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True):
-            if path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS:
-                images.append(
-                    {
-                        "label": f"Uploaded: {path.name}",
-                        "value": _rel(path),
-                        "uploaded": True,
-                        "name": path.name,
-                        "url": url_for("project_asset", filename=_rel(path).replace("\\", "/")),
-                    }
-                )
+        latest = next(
+            (
+                path
+                for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True)
+                if path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
+            ),
+            None,
+        )
+        if latest:
+            images.append(
+                {
+                    "label": f"Uploaded: {latest.name}",
+                    "value": _rel(latest),
+                    "uploaded": True,
+                    "name": latest.name,
+                    "url": url_for("project_asset", filename=_rel(latest).replace("\\", "/")),
+                }
+            )
     return images
+
+
+def _clear_uploaded_images(niche_name):
+    image_dir = _campaign_image_dir(niche_name)
+    if not image_dir.exists():
+        return
+    for path in image_dir.iterdir():
+        if path.is_file() and path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS:
+            path.unlink(missing_ok=True)
 
 
 def _resolve_sheet(niche_name, niche_cfg, requested_sheet=None):
@@ -626,6 +750,14 @@ def _resolve_sheet(niche_name, niche_cfg, requested_sheet=None):
     return default_sheet
 
 
+def _is_uploaded_sheet(niche_name, sheet):
+    try:
+        resolved = Path(sheet).resolve()
+    except OSError:
+        return False
+    return any(_is_relative_to(resolved, directory) for directory in _allowed_upload_dirs(niche_name))
+
+
 def _resolve_image(niche_name, requested_image=None):
     if not requested_image or requested_image == "__default__":
         return None
@@ -650,9 +782,9 @@ def _message_config(niche_name, niche_cfg, email_subject=None, email_intro=None,
         **niche_cfg,
         "templates": [dict(template) for template in niche_cfg.get("templates", [])],
     }
-    if email_subject:
+    if email_subject is not None:
         copied["email_subject"] = email_subject
-    if email_intro:
+    if email_intro is not None:
         copied["email_intro"] = email_intro
     image = _resolve_image(niche_name, preview_image)
     if image is not None:
@@ -702,7 +834,7 @@ def _whatsapp_web_url(phone, text):
     return f"https://wa.me/{digits}?text={quote(text)}"
 
 
-def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None):
+def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None, recipient_email=None):
     load_dotenv(config.BASE_DIR / ".env", override=True)
     base_niche_cfg = config.NICHES[niche_name]
     sheet = _resolve_sheet(niche_name, base_niche_cfg, requested_sheet)
@@ -724,10 +856,13 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     )
     daily_queue = pending_leads[:remaining_today]
     current_business = daily_queue[0] if daily_queue else None
+    if current_business and recipient_email is not None:
+        current_business.email = recipient_email
     base_templates = base_niche_cfg.get("templates", [])
     current_template = base_templates[0] if base_templates else None
+    template_html, template_filename = _load_niche_email_template(niche_name)
     draft_subject = email_subject or _draft_text(base_niche_cfg.get("email_subject", ""), current_business, current_template, niche_name)
-    draft_intro = email_intro or _draft_text(base_niche_cfg.get("email_intro", ""), current_business, current_template, niche_name)
+    draft_intro = email_intro if email_intro is not None else template_html
     niche_cfg = _message_config(niche_name, base_niche_cfg, draft_subject, draft_intro, preview_image)
     templates = niche_cfg.get("templates", [])
 
@@ -738,18 +873,18 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     if sample_business and templates:
         sample_message = build_message(sample_business, templates[0], niche_cfg, niche_name, sender_name, sender_email)
 
+    visible_leads = leads[:LEAD_TABLE_LIMIT]
     enriched_leads = []
-    for lead in leads:
-        lead_message = None
-        if templates:
-            lead_message = build_message(lead, templates[0], niche_cfg, niche_name, sender_name, sender_email)
+    for lead in visible_leads:
         enriched_leads.append(
             {
                 "name": lead.name,
                 "email": lead.email,
                 "phone": lead.phone,
                 "normalized_phone": normalize_phone(lead.phone, config.DEFAULT_COUNTRY_CODE) or lead.phone,
-                "whatsapp_url": _whatsapp_web_url(lead.phone, lead_message.whatsapp_text) if lead_message else "",
+                "whatsapp_url": _whatsapp_web_url(lead.phone, sample_message.whatsapp_text)
+                if sample_message and current_business and lead.email == current_business.email and lead.phone == current_business.phone
+                else "",
                 "sent": (niche_name, lead.email, lead.phone) in sent_keys,
                 "current": current_business
                 and lead.email == current_business.email
@@ -775,12 +910,15 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "selected_image": preview_image or "__default__",
         "email_subject": niche_cfg.get("email_subject", ""),
         "email_intro": niche_cfg.get("email_intro", ""),
+        "email_template_filename": template_filename,
         "current_business": current_business,
         "daily_queue": daily_queue,
         "daily_limit": DAILY_EMAIL_LIMIT,
         "sent_today_count": sent_today_count,
         "remaining_today": remaining_today,
         "leads": enriched_leads,
+        "visible_lead_count": len(enriched_leads),
+        "lead_table_limit": LEAD_TABLE_LIMIT,
         "templates": templates,
         "template_previews": {template["name"]: _preview_image_url(template) for template in templates},
         "sample_message": sample_message,
@@ -802,9 +940,17 @@ def dashboard():
     niche_name = request.args.get("niche") or config.ACTIVE_NICHE
     if niche_name not in config.NICHES:
         niche_name = config.ACTIVE_NICHE
+    draft = _pop_message_draft() or {}
     return render_template(
         "dashboard.html",
-        **_build_dashboard(niche_name, request.args.get("sheet"), preview_image=request.args.get("image")),
+        **_build_dashboard(
+            niche_name,
+            request.args.get("sheet"),
+            draft.get("email_subject"),
+            draft.get("email_intro"),
+            request.args.get("image"),
+            draft.get("recipient_email"),
+        ),
         run_result=None,
         upload_result=None,
     )
@@ -815,12 +961,20 @@ def upload_leads():
     niche_name = request.form.get("niche") or config.ACTIVE_NICHE
     if niche_name not in config.NICHES:
         niche_name = config.ACTIVE_NICHE
+    _stash_message_draft()
 
     uploaded = request.files.get("lead_file")
     if not uploaded or not uploaded.filename:
         return render_template(
             "dashboard.html",
-            **_build_dashboard(niche_name, request.form.get("sheet")),
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+            ),
             run_result=None,
             upload_result={"ok": False, "message": "Choose a CSV or Excel lead file first."},
         )
@@ -830,7 +984,14 @@ def upload_leads():
     if suffix not in ALLOWED_LEAD_EXTENSIONS:
         return render_template(
             "dashboard.html",
-            **_build_dashboard(niche_name, request.form.get("sheet")),
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+            ),
             run_result=None,
             upload_result={"ok": False, "message": "Lead files must be .csv, .xlsx, or .xlsm."},
         )
@@ -849,7 +1010,14 @@ def upload_leads():
         saved_path.unlink(missing_ok=True)
         return render_template(
             "dashboard.html",
-            **_build_dashboard(niche_name, request.form.get("sheet")),
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+            ),
             run_result=None,
             upload_result={"ok": False, "message": f"Could not read that file: {exc}"},
         )
@@ -863,18 +1031,27 @@ def upload_image():
     niche_name = request.form.get("niche") or config.ACTIVE_NICHE
     if niche_name not in config.NICHES:
         niche_name = config.ACTIVE_NICHE
+    _stash_message_draft()
 
     uploaded_files = [file for file in request.files.getlist("email_image") if file and file.filename]
     if not uploaded_files:
         return render_template(
             "dashboard.html",
-            **_build_dashboard(niche_name, request.form.get("sheet")),
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+            ),
             run_result=None,
             upload_result={"ok": False, "message": "Choose an email image first."},
         )
 
     image_dir = _campaign_image_dir(niche_name)
     image_dir.mkdir(parents=True, exist_ok=True)
+    _clear_uploaded_images(niche_name)
     saved_paths = []
     for index, uploaded in enumerate(uploaded_files, start=1):
         original_name = secure_filename(uploaded.filename)
@@ -882,7 +1059,14 @@ def upload_image():
         if suffix not in ALLOWED_IMAGE_EXTENSIONS:
             return render_template(
                 "dashboard.html",
-                **_build_dashboard(niche_name, request.form.get("sheet")),
+                **_build_dashboard(
+                    niche_name,
+                    request.form.get("sheet"),
+                    request.form.get("email_subject"),
+                    request.form.get("email_intro"),
+                    None,
+                    request.form.get("recipient_email"),
+                ),
                 run_result=None,
                 upload_result={"ok": False, "message": "Images must be .jpg, .jpeg, .png, .webp, or .gif."},
             )
@@ -958,6 +1142,28 @@ def run_campaign():
             upload_result=None,
         )
 
+    original_email = current_business.email
+    recipient_email = request.form.get("recipient_email", "").strip()
+    if recipient_email and recipient_email != current_business.email:
+        if use_db and getattr(current_business, "db_id", ""):
+            try:
+                db.update_lead_email(current_business.db_id, recipient_email)
+            except Exception as exc:
+                return render_template(
+                    "dashboard.html",
+                    **_build_dashboard(
+                        niche_name,
+                        request.form.get("sheet"),
+                        request.form.get("email_subject"),
+                        request.form.get("email_intro"),
+                        None,
+                        original_email,
+                    ),
+                    run_result={"ok": False, "output": f"Could not update recipient email: {exc}"},
+                    upload_result=None,
+                )
+        current_business.email = recipient_email
+
     single_sheet = _write_single_lead_sheet(niche_name, current_business)
     args.extend(["--sheet", str(single_sheet), "--limit", "1"])
 
@@ -974,13 +1180,16 @@ def run_campaign():
         args.append("--no-whatsapp")
 
     email_subject = request.form.get("email_subject", "").strip()
-    email_intro = request.form.get("email_intro", "").strip()
+    email_intro = request.form.get("email_intro", "").strip() or _load_niche_email_template(niche_name)[0].strip()
     preview_image = request.form.get("preview_image", "__default__")
     resolved_image = _resolve_image(niche_name, preview_image)
+    temp_files = []
     if email_subject:
         args.extend(["--email-subject", email_subject])
     if email_intro:
-        args.extend(["--email-intro", email_intro])
+        email_intro_file = _write_run_text_file("email-intro-", email_intro)
+        temp_files.append(email_intro_file)
+        args.extend(["--email-intro-file", str(email_intro_file)])
     if resolved_image is not None:
         if resolved_image:
             args.extend(["--preview-image", resolved_image])
@@ -994,15 +1203,19 @@ def run_campaign():
     else:
         args.append("--dry-run")
 
-    completed = subprocess.run(
-        args,
-        cwd=config.BASE_DIR,
-        env=_command_env(),
-        text=True,
-        capture_output=True,
-        timeout=600,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            args,
+            cwd=config.BASE_DIR,
+            env=_command_env(),
+            text=True,
+            capture_output=True,
+            timeout=600,
+            check=False,
+        )
+    finally:
+        for path in temp_files:
+            path.unlink(missing_ok=True)
     output = "\n".join(part for part in (completed.stdout, completed.stderr) if part.strip()).strip()
     if use_db and completed.returncode == 0 and mode == "send":
         template = _message_config(niche_name, config.NICHES[niche_name], email_subject, email_intro, preview_image)["templates"][0]
@@ -1017,7 +1230,7 @@ def run_campaign():
         )
     return render_template(
         "dashboard.html",
-        **_build_dashboard(niche_name, request.form.get("sheet"), email_subject, email_intro, preview_image),
+        **_build_dashboard(niche_name, request.form.get("sheet"), email_subject, email_intro, preview_image, current_business.email),
         run_result={"ok": completed.returncode == 0, "output": output or "Command completed with no output."},
         upload_result=None,
     )
@@ -1102,6 +1315,21 @@ def send_response():
             rows=rows,
             run_result={"ok": False, "output": str(exc)},
         )
+
+
+@app.post("/responses/delete")
+def delete_response():
+    response_id = request.form.get("response_id", "").strip()
+    from_email = request.form.get("from_email", "").strip()
+    subject = request.form.get("subject", "").strip()
+    if _ignore_response(response_id, from_email, subject):
+        return redirect(url_for("responses", deleted=from_email or "response"))
+    rows, _ = _fetch_responses()
+    return render_template(
+        "responses.html",
+        rows=rows,
+        run_result={"ok": False, "output": "Could not delete that response from the app."},
+    )
 
 
 @app.post("/follow-ups/delete")

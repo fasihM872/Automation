@@ -8,6 +8,7 @@ data/email_images/
 data/run_queue/
 data/email_tracking.csv
 data/email_opens.csv
+data/ignored_responses.csv
 data/*.db
 .venv/
 venv/

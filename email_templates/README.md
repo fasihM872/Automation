@@ -1,12 +1,13 @@
 # Email Templates
 
-`pitch_email.html` is a Jinja template used by `content.py`.
+Add one HTML email template per niche in this folder:
 
-Available template variables:
+- `dentists.html`
+- `plumber.html`
+- `hospital.html`
+- `care_homes.html`
+- `pharmacy.html`
 
-- `intro_paragraphs`
-- `template_name`
-- `template_url`
-- `preview_src`
-- `sender_name`
-- `sender_email`
+When you select a niche in the dashboard, the matching file is loaded automatically and sent as the email body.
+
+Use `musharp` as the sample business name inside a template. During sending it is replaced with the business name from the selected Excel/CSV lead row. The brand text `muSharp` and links like `https://musharp.com` are left unchanged.

@@ -204,6 +204,16 @@ def delete_pending_leads_by_source(niche, source_name):
         )
 
 
+def update_lead_email(lead_id, email):
+    init_db()
+    with connect() as conn:
+        _execute(
+            conn,
+            "UPDATE leads SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (email, lead_id),
+        )
+
+
 def sent_today_count(niche, today):
     init_db()
     with connect() as conn:

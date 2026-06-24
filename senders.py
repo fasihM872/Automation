@@ -3,6 +3,8 @@ import os
 import re
 import smtplib
 import ssl
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -81,8 +83,19 @@ class EmailSender:
             img.add_header("Content-Disposition", "inline", filename=os.path.basename(path))
             root.attach(img)
 
-    def send(self, to_email, subject, html_body, text_body, inline_images=None):
+    @staticmethod
+    def _attach_files(root, attachments):
+        for path in attachments:
+            with open(path, "rb") as fh:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(fh.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", "attachment", filename=os.path.basename(path))
+            root.attach(part)
+
+    def send(self, to_email, subject, html_body, text_body, inline_images=None, attachments=None):
         inline_images = inline_images or []
+        attachments = attachments or []
 
         # text + html alternatives
         alternative = MIMEMultipart("alternative")
@@ -96,6 +109,12 @@ class EmailSender:
             self._attach_inline_images(msg, inline_images)
         else:
             msg = alternative
+
+        if attachments:
+            mixed = MIMEMultipart("mixed")
+            mixed.attach(msg)
+            self._attach_files(mixed, attachments)
+            msg = mixed
 
         msg["Subject"] = subject
         msg["From"] = f"{self.sender_name} <{self.sender_email}>"
