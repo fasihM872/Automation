@@ -1228,9 +1228,18 @@ def run_campaign():
             whatsapp_status="disabled" if request.form.get("no_whatsapp") else "sent",
             sent_at=datetime.now().isoformat(timespec="seconds"),
         )
+    refresh_subject = None if completed.returncode == 0 and mode == "send" else email_subject
+    refresh_recipient_email = None if completed.returncode == 0 and mode == "send" else current_business.email
     return render_template(
         "dashboard.html",
-        **_build_dashboard(niche_name, request.form.get("sheet"), email_subject, email_intro, preview_image, current_business.email),
+        **_build_dashboard(
+            niche_name,
+            request.form.get("sheet"),
+            refresh_subject,
+            email_intro,
+            preview_image,
+            refresh_recipient_email,
+        ),
         run_result={"ok": completed.returncode == 0, "output": output or "Command completed with no output."},
         upload_result=None,
     )
