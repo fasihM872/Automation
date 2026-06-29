@@ -456,8 +456,33 @@ def _fetch_responses(force_refresh=False):
     if cached:
         rows, error, fetched_at = cached
         return rows, error, fetched_at, True
+
+    host = _env_value("IMAP_HOST").strip() if _env_value("IMAP_HOST") else None
+    smtp_host = _env_value("SMTP_HOST", "").strip()
+    if not host:
+        if "zoho" in smtp_host.lower():
+            host = "imap.zoho.com"
+        elif "gmail" in smtp_host.lower():
+            host = "imap.gmail.com"
+        elif smtp_host.lower().startswith("smtp."):
+            host = smtp_host.lower().replace("smtp.", "imap.", 1)
+        else:
+            host = "imap.gmail.com"
+
+    provider = "Gmail"
+    if "zoho" in host.lower():
+        provider = "Zoho Mail"
+    elif "gmail" in host.lower():
+        provider = "Gmail"
+    else:
+        match = re.search(r"imap\.(?:mail\.)?([^.]+)\.", host.lower())
+        if match:
+            provider = match.group(1).capitalize()
+        else:
+            provider = "IMAP"
+
     if not force_refresh:
-        return [], "Click Refresh Inbox to check Gmail for new replies.", None, True
+        return [], f"Click Refresh Inbox to check {provider} for new replies.", None, True
 
     contacts = _sent_contacts_by_email()
     if not contacts:
@@ -465,7 +490,6 @@ def _fetch_responses(force_refresh=False):
             return [], "No recipient replies yet. Sent emails from your own sender address are ignored.", None, False
         return [], "No sent recipient contacts found yet.", None, False
 
-    host = _env_value("IMAP_HOST", "imap.gmail.com")
     username = _env_value("IMAP_USERNAME") or _env_value("SMTP_USERNAME")
     password = _env_value("IMAP_PASSWORD") or _env_value("SMTP_PASSWORD")
     own_emails = _own_email_addresses()
@@ -473,7 +497,7 @@ def _fetch_responses(force_refresh=False):
     if "gmail.com" in host.lower():
         password = "".join(password.split())
     if not host or not username or not password:
-        return [], "IMAP is not configured. Add IMAP_HOST, IMAP_USERNAME, and IMAP_PASSWORD or reuse your Gmail SMTP values.", None, False
+        return [], f"IMAP is not configured. Add IMAP_HOST, IMAP_USERNAME, and IMAP_PASSWORD or reuse your {provider} SMTP values.", None, False
 
     try:
         with imaplib.IMAP4_SSL(host, 993, timeout=15) as mailbox:

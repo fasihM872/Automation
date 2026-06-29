@@ -397,7 +397,9 @@
       function renderPreview() {
         if (!visual) return;
         const value = textarea.value.trim();
-        const html = applyBusinessName(value ? (looksLikeHtml(value) ? value : plainTextToHtml(value)) : "");
+        let html = applyBusinessName(value ? (looksLikeHtml(value) ? value : plainTextToHtml(value)) : "");
+        // Replace inline image CID references with local web asset paths for preview rendering in browser
+        html = html.replace(/src="cid:([^"]+)"/g, 'src="/assets/$1.png"');
         if (visual.tagName === "IFRAME") {
           visual.srcdoc = html;
           visual.addEventListener("load", resizePreviewFrame, { once: true });

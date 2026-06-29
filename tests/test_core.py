@@ -113,6 +113,30 @@ class CoreTests(unittest.TestCase):
             ["boss@example.com", "archive@example.com"],
         )
 
+    def test_inline_image_cid_resolution(self):
+        from content import build_message
+        from main import Business
+        
+        business = Business(name="Test Clinic", email="test@clinic.com", phone="1234")
+        template = {"name": "Test Niche", "url": "https://test.com", "preview_image": ""}
+        niche_cfg = {
+            "email_subject": "Test subject",
+            "email_intro": '<p>Check out our chatbot: <img src="cid:dentist_chatbot"></p>',
+            "whatsapp_message": "Hello",
+            "templates": [template]
+        }
+        
+        message = build_message(
+            business,
+            template,
+            niche_cfg,
+            "dentists",
+            "muSharp",
+            "sender@example.com"
+        )
+        
+        self.assertTrue(any(cid == "dentist_chatbot" for cid, _ in message.inline_images))
+
 
 if __name__ == "__main__":
     unittest.main()

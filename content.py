@@ -173,6 +173,15 @@ def build_message(business, template, niche_cfg, niche_name, sender_name, sender
         tracking_pixel_url=tracking_pixel_url,
     )
 
+    # Automatically scan html_body for any inline image CIDs and resolve them from the assets directory
+    cids = re.findall(r'src="cid:([^"]+)"', html_body)
+    for cid in set(cids):
+        for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+            img_path = config.BASE_DIR / "assets" / f"{cid}{ext}"
+            if img_path.exists():
+                inline_images.append((cid, str(img_path)))
+                break
+
     text_intro = _html_to_text(intro) if intro_html else intro
     text_body = text_intro
 
