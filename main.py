@@ -179,7 +179,7 @@ def make_email_sender():
         port=os.getenv("SMTP_PORT", "587"),
         username=os.getenv("SMTP_USERNAME"),
         password=os.getenv("SMTP_PASSWORD"),
-        sender_name=os.getenv("SENDER_NAME", "Musharp Automation"),
+        sender_name=os.getenv("SENDER_NAME", "muSharp"),
         sender_email=os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", "")),
         reply_to=os.getenv("REPLY_TO"),
     )
@@ -298,9 +298,10 @@ def run(args):
 
     sent = load_sent(config.SENT_LOG)
     templates = cycle(niche_cfg["templates"])
-    sender_name = os.getenv("SENDER_NAME", "Musharp Automation")
+    sender_name = os.getenv("SENDER_NAME", "muSharp")
     sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", ""))
     tracking_base_url = _tracking_base_url(args)
+    bcc_recipients = EmailSender._parse_recipients(args.bcc)
 
     email_sender = None if args.no_email or dry_run else make_email_sender()
     whatsapp_sender = None if args.no_whatsapp or dry_run else make_whatsapp_sender()
@@ -335,6 +336,8 @@ def run(args):
             if dry_run:
                 print(f"\nDRY RUN #{index}: {business.name}")
                 print(f"Email: {business.email}")
+                if bcc_recipients:
+                    print(f"BCC: {', '.join(bcc_recipients)}")
                 print(f"Phone: {normalize_phone(business.phone, config.DEFAULT_COUNTRY_CODE) or business.phone}")
                 print(f"Subject: {message.subject}")
                 print(f"WhatsApp:\n{message.whatsapp_text}")
@@ -346,15 +349,21 @@ def run(args):
                 email_status = "no_recipient"
             elif email_client:
                 try:
-                    email_client.send(
+                    refused = email_client.send(
                         business.email,
                         message.subject,
                         message.html_body,
                         message.text_body,
                         message.inline_images,
                         message.attachments,
+                        args.bcc,
                     )
+                    if refused:
+                        refused_list = ", ".join(refused.keys())
+                        raise RuntimeError(f"SMTP refused recipient(s): {refused_list}")
                     email_status = "sent"
+                    if bcc_recipients:
+                        print(f"BCC sent to: {', '.join(bcc_recipients)}")
                 except Exception as exc:
                     email_status = "failed"
                     print(f"EMAIL FAILED for {business.email}: {exc}")
@@ -399,6 +408,7 @@ def parse_args():
     parser.add_argument("--email-subject", type=str, help="Override the configured email subject.")
     parser.add_argument("--email-intro", type=str, help="Override the configured email cover letter text.")
     parser.add_argument("--email-intro-file", type=str, help="Read the email cover letter override from a file.")
+    parser.add_argument("--bcc", type=str, default="", help="Comma-separated BCC recipient email addresses.")
     parser.add_argument("--template-url", type=str, help="Override the template/demo URL used in the email.")
     parser.add_argument("--preview-image", type=str, help="Override the image embedded in the email.")
     parser.add_argument("--no-preview-image", action="store_const", const="", dest="preview_image")

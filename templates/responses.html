@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Musharp Automation | Responses</title>
+  <title>muSharp | Responses</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
   <header class="app-header">
     <a class="brand" href="/">
-      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="muSharp logo">
       <div>
-        <strong>Musharp Automation</strong>
+        <strong>muSharp</strong>
         <span>Campaign mail workspace</span>
       </div>
     </a>
@@ -29,6 +29,7 @@
         <p class="eyebrow">Inbox replies</p>
         <h1>Responses</h1>
       </div>
+      <a class="secondary-button" href="{{ url_for('responses', refresh='1') }}">Refresh Inbox</a>
     </header>
 
     {% if run_result %}
@@ -53,7 +54,7 @@
     <section class="panel">
       <div class="panel-heading">
         <h2>Matched Replies</h2>
-        <span>{{ rows|length }} responses</span>
+        <span>{{ rows|length }} responses{% if fetched_at %} · {{ "cached" if cached else "refreshed" }} {{ fetched_at.strftime("%I:%M %p") }}{% endif %}</span>
       </div>
       {% if rows %}
       <div class="response-list">

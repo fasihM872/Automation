@@ -9,9 +9,9 @@
 <body>
   <header class="app-header">
     <a class="brand" href="/">
-      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="Musharp Automation logo">
+      <img class="brand-logo" src="{{ url_for('static', filename='musharp-logo.svg') }}" alt="muSharp logo">
       <div>
-        <strong>Musharp Automation</strong>
+        <strong>muSharp</strong>
         <span>Campaign mail workspace</span>
       </div>
     </a>
@@ -80,6 +80,7 @@
           <input type="hidden" name="sheet" value="{{ sheet }}">
           <input type="hidden" name="email_subject" data-draft-subject>
           <input type="hidden" name="email_intro" data-draft-intro>
+          <input type="hidden" name="bcc_email" data-draft-bcc-email>
           <label for="lead_file">Add Lead File</label>
           <div class="upload-row">
             <input id="lead_file" name="lead_file" type="file" accept=".csv,.xlsx,.xlsm">
@@ -102,6 +103,7 @@
           <input type="hidden" name="email_subject" data-draft-subject>
           <input type="hidden" name="email_intro" data-draft-intro>
           <input type="hidden" name="recipient_email" data-draft-recipient-email>
+          <input type="hidden" name="bcc_email" data-draft-bcc-email>
           <label for="email_image">Add Email Images</label>
           <div class="upload-row">
             <input id="email_image" name="email_image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" multiple>
@@ -137,6 +139,11 @@
             <input id="recipient_email" name="recipient_email" type="email" value="{{ current_business.email }}" placeholder="recipient@example.com">
           </div>
           {% endif %}
+          <div class="field">
+            <label for="bcc_email">BCC email</label>
+            <input id="bcc_email" name="bcc_email" type="text" value="{{ bcc_email }}" placeholder="manager@example.com, backup@example.com">
+            <p class="form-note">Optional. Separate multiple BCC addresses with commas.</p>
+          </div>
           <div class="field">
             <label for="email_intro">Niche email template</label>
             <div class="html-editor" data-cover-editor>
@@ -341,6 +348,7 @@
       const visual = document.querySelector("[data-cover-preview]");
       const subject = document.querySelector("#email_subject");
       const recipientEmail = document.querySelector("#recipient_email");
+      const bccEmail = document.querySelector("#bcc_email");
 
       function plainTextToHtml(value) {
         return value
@@ -362,7 +370,9 @@
 
       function applyBusinessName(value) {
         if (!visual || !visual.dataset.businessName) return value;
-        return value.replace(/(^|[^\w/@.-])musharp(?![\w@.-])/g, `$1${visual.dataset.businessName}`);
+        return value
+          .replace(/\{business_name\}/g, visual.dataset.businessName)
+          .replace(/(^|[^\w/@.-])musharp(?![\w@.-])/g, `$1${visual.dataset.businessName}`);
       }
 
       function resizePreviewFrame() {
@@ -404,9 +414,11 @@
           const subjectInput = form.querySelector("[data-draft-subject]");
           const introInput = form.querySelector("[data-draft-intro]");
           const recipientInput = form.querySelector("[data-draft-recipient-email]");
+          const bccInput = form.querySelector("[data-draft-bcc-email]");
           if (subjectInput && subject) subjectInput.value = subject.value;
           if (introInput) introInput.value = textarea.value;
           if (recipientInput && recipientEmail) recipientInput.value = recipientEmail.value;
+          if (bccInput && bccEmail) bccInput.value = bccEmail.value;
         });
       });
       renderPreview();

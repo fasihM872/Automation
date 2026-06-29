@@ -48,7 +48,7 @@ NICHES = {
         ],
         "email_subject": "A free website preview for {business_name}",
         "email_intro": (
-            "we have came across ur business {business_name} and noticed that a clean, "
+            "We came across ur business {business_name} and noticed that a clean, "
             "mobile-friendly website could help patients quickly find your services, timings, "
             "location, and contact details.\n\n"
             "I can build a professional website for your dental clinic for $200. "
@@ -69,7 +69,7 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "we have came across ur business {business_name} and noticed that a fast, "
+            "We came across ur business {business_name} and noticed that a fast, "
             "mobile-friendly website could help customers call you quickly, request urgent "
             "service, and see the areas you cover.\n\n"
             "I can build a professional website for your plumbing business for $200. "
@@ -90,7 +90,7 @@ NICHES = {
         ],
         "email_subject": "A modern website preview for {business_name}",
         "email_intro": (
-            "we have came across ur business {business_name} and noticed that a clear, "
+            "We came across ur business {business_name} and noticed that a clear, "
             "professional website could help patients find departments, doctors, timings, "
             "location, and appointment options more easily.\n\n"
             "I can build a professional website for your hospital or clinic for $200. "
@@ -111,7 +111,7 @@ NICHES = {
         ],
         "email_subject": "A warm website preview for {business_name}",
         "email_intro": (
-            "we have came across ur business {business_name} and noticed that a calm, "
+            "We came across ur business {business_name} and noticed that a calm, "
             "trustworthy website could help families understand your care services, rooms, "
             "visiting options, and how to arrange a visit.\n\n"
             "I can build a professional website for your care home for $200. "
@@ -132,7 +132,7 @@ NICHES = {
         ],
         "email_subject": "A website preview for {business_name}",
         "email_intro": (
-            "we have came across ur business {business_name} and noticed that a clean, "
+            "We came across ur business {business_name} and noticed that a clean, "
             "mobile-friendly website could help customers find opening hours, services, "
             "prescription information, delivery options, and contact details quickly.\n\n"
             "I can build a professional website for your pharmacy for $200. "

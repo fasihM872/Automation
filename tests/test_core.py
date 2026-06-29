@@ -5,7 +5,7 @@ import app as app_module
 from app import app
 from content import build_message
 from main import Business, load_leads
-from senders import normalize_phone
+from senders import EmailSender, normalize_phone
 
 
 class CoreTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class CoreTests(unittest.TestCase):
             niche["templates"][0],
             niche,
             "dentists",
-            "Musharp Automation",
+            "muSharp",
             "sender@example.com",
         )
         self.assertIn("website preview", message.subject)
@@ -36,8 +36,8 @@ class CoreTests(unittest.TestCase):
         niche = {
             **config.NICHES["dentists"],
             "email_intro": (
-                "<title>A Professional Website for musharp Dental Clinic</title>"
-                "<p>I have come across ur business <strong>musharp</strong>.</p>"
+                "<title>A Professional Website for {business_name} Dental Clinic</title>"
+                "<p>We came across ur business <strong>musharp</strong>.</p>"
                 '<p>Designed by <a href="https://musharp.com">muSharp</a></p>'
             ),
         }
@@ -47,7 +47,7 @@ class CoreTests(unittest.TestCase):
             niche["templates"][0],
             niche,
             "dentists",
-            "Musharp Automation",
+            "muSharp",
             "sender@example.com",
         )
         self.assertIn("A Professional Website for Bright Smile Care Dental Clinic", message.html_body)
@@ -81,6 +81,37 @@ class CoreTests(unittest.TestCase):
         finally:
             app_module.IGNORED_RESPONSES_LOG.unlink(missing_ok=True)
             app_module.IGNORED_RESPONSES_LOG = original_log
+
+    def test_email_sender_bcc_is_envelope_only(self):
+        class DummyServer:
+            def sendmail(self, sender, recipients, body):
+                self.sender = sender
+                self.recipients = recipients
+                self.body = body
+
+        sender = EmailSender.__new__(EmailSender)
+        sender.sender_name = "muSharp"
+        sender.sender_email = "sender@example.com"
+        sender.reply_to = "reply@example.com"
+        sender._server = DummyServer()
+
+        sender.send(
+            "lead@example.com",
+            "Subject",
+            "<p>Hello</p>",
+            "Hello",
+            bcc="boss@example.com, Archive <archive@example.com>",
+        )
+
+        self.assertEqual(
+            sender._server.recipients,
+            ["lead@example.com", "boss@example.com", "archive@example.com"],
+        )
+        self.assertNotIn("Bcc:", sender._server.body)
+        self.assertEqual(
+            EmailSender._parse_recipients("boss@example.com; Archive <archive@example.com>"),
+            ["boss@example.com", "archive@example.com"],
+        )
 
 
 if __name__ == "__main__":

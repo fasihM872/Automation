@@ -3,6 +3,7 @@ import os
 import re
 import smtplib
 import ssl
+from email.utils import getaddresses
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
@@ -73,6 +74,14 @@ class EmailSender:
                 self._server = None
 
     @staticmethod
+    def _parse_recipients(value):
+        if not value:
+            return []
+        if isinstance(value, str):
+            value = [part.strip() for part in re.split(r"[;,]", value) if part.strip()]
+        return [email for _, email in getaddresses(value) if email]
+
+    @staticmethod
     def _attach_inline_images(root, inline_images):
         for cid, path in inline_images:
             ext = os.path.splitext(path)[1].lower().lstrip(".")
@@ -93,9 +102,10 @@ class EmailSender:
             part.add_header("Content-Disposition", "attachment", filename=os.path.basename(path))
             root.attach(part)
 
-    def send(self, to_email, subject, html_body, text_body, inline_images=None, attachments=None):
+    def send(self, to_email, subject, html_body, text_body, inline_images=None, attachments=None, bcc=None):
         inline_images = inline_images or []
         attachments = attachments or []
+        bcc = self._parse_recipients(bcc)
 
         # text + html alternatives
         alternative = MIMEMultipart("alternative")
@@ -120,7 +130,7 @@ class EmailSender:
         msg["From"] = f"{self.sender_name} <{self.sender_email}>"
         msg["To"] = to_email
         msg["Reply-To"] = self.reply_to
-        self._server.sendmail(self.sender_email, [to_email], msg.as_string())
+        return self._server.sendmail(self.sender_email, [to_email, *bcc], msg.as_string())
 
 
 class WhatsAppSender:

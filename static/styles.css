@@ -357,6 +357,23 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.secondary-button {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--accent);
+  display: inline-flex;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.secondary-button:hover {
+  border-color: var(--accent);
+  background: #eef8f5;
+}
+
 .summary-grid,
 .content-grid,
 .workbench {

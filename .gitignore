@@ -9,6 +9,8 @@ data/run_queue/
 data/email_tracking.csv
 data/email_opens.csv
 data/ignored_responses.csv
+data/responses_cache.json
 data/*.db
+flask-server.*.log
 .venv/
 venv/

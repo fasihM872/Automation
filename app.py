@@ -3,6 +3,7 @@ import csv
 import html
 import imaplib
 import email as email_parser
+import json
 import os
 import re
 import subprocess
@@ -34,6 +35,7 @@ RUN_DIR = config.DATA_DIR / "run_queue"
 TRACKING_LOG = config.DATA_DIR / "email_tracking.csv"
 OPEN_LOG = config.DATA_DIR / "email_opens.csv"
 IGNORED_RESPONSES_LOG = config.DATA_DIR / "ignored_responses.csv"
+RESPONSES_CACHE_FILE = config.DATA_DIR / "responses_cache.json"
 ALLOWED_LEAD_EXTENSIONS = {".csv", ".xlsx", ".xlsm"}
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 DAILY_EMAIL_LIMIT = 5
@@ -64,6 +66,8 @@ TRACKING_FIELDNAMES = [
 OPEN_FIELDNAMES = ["tracking_id", "opened_at", "ip", "user_agent"]
 IGNORED_RESPONSE_FIELDNAMES = ["response_id", "ignored_at", "from_email", "subject"]
 MAX_RESPONSES = 50
+RESPONSE_SCAN_LIMIT = 120
+_RESPONSES_CACHE = {"rows": None, "error": "", "fetched_at": None}
 PIXEL_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
     b"\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,"
@@ -144,7 +148,52 @@ def _ignore_response(response_id, from_email="", subject=""):
         }
     )
     _write_csv_rows(IGNORED_RESPONSES_LOG, rows, IGNORED_RESPONSE_FIELDNAMES)
+    _clear_responses_cache()
     return True
+
+
+def _clear_responses_cache():
+    _RESPONSES_CACHE.update({"rows": None, "error": "", "fetched_at": None})
+    RESPONSES_CACHE_FILE.unlink(missing_ok=True)
+
+
+def _store_responses_cache(rows, error, fetched_at):
+    _RESPONSES_CACHE.update({"rows": rows, "error": error, "fetched_at": fetched_at})
+    RESPONSES_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(RESPONSES_CACHE_FILE, "w", encoding="utf-8") as fh:
+        json.dump(
+            {
+                "rows": rows,
+                "error": error,
+                "fetched_at": fetched_at.isoformat(timespec="seconds") if fetched_at else "",
+            },
+            fh,
+            ensure_ascii=False,
+        )
+
+
+def _cached_responses():
+    fetched_at = _RESPONSES_CACHE.get("fetched_at")
+    rows = _RESPONSES_CACHE.get("rows")
+    if rows is None and RESPONSES_CACHE_FILE.exists():
+        try:
+            with open(RESPONSES_CACHE_FILE, encoding="utf-8") as fh:
+                payload = json.load(fh)
+            rows = payload.get("rows") or []
+            fetched_at_raw = payload.get("fetched_at") or ""
+            fetched_at = datetime.fromisoformat(fetched_at_raw) if fetched_at_raw else None
+            _RESPONSES_CACHE.update(
+                {
+                    "rows": rows,
+                    "error": payload.get("error", ""),
+                    "fetched_at": fetched_at,
+                }
+            )
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            return None
+    if rows is None or not fetched_at:
+        return None
+    return rows, _RESPONSES_CACHE.get("error", ""), fetched_at
 
 
 def _append_open(tracking_id):
@@ -402,12 +451,19 @@ def _response_since_date(contacts):
     return min(dates).strftime("%d-%b-%Y")
 
 
-def _fetch_responses():
+def _fetch_responses(force_refresh=False):
+    cached = None if force_refresh else _cached_responses()
+    if cached:
+        rows, error, fetched_at = cached
+        return rows, error, fetched_at, True
+    if not force_refresh:
+        return [], "Click Refresh Inbox to check Gmail for new replies.", None, True
+
     contacts = _sent_contacts_by_email()
     if not contacts:
         if _sent_response_contact_count() == 0:
-            return [], "No recipient replies yet. Sent emails from your own sender address are ignored."
-        return [], "No sent recipient contacts found yet."
+            return [], "No recipient replies yet. Sent emails from your own sender address are ignored.", None, False
+        return [], "No sent recipient contacts found yet.", None, False
 
     host = _env_value("IMAP_HOST", "imap.gmail.com")
     username = _env_value("IMAP_USERNAME") or _env_value("SMTP_USERNAME")
@@ -417,10 +473,10 @@ def _fetch_responses():
     if "gmail.com" in host.lower():
         password = "".join(password.split())
     if not host or not username or not password:
-        return [], "IMAP is not configured. Add IMAP_HOST, IMAP_USERNAME, and IMAP_PASSWORD or reuse your Gmail SMTP values."
+        return [], "IMAP is not configured. Add IMAP_HOST, IMAP_USERNAME, and IMAP_PASSWORD or reuse your Gmail SMTP values.", None, False
 
     try:
-        with imaplib.IMAP4_SSL(host, 993) as mailbox:
+        with imaplib.IMAP4_SSL(host, 993, timeout=15) as mailbox:
             mailbox.login(username, password)
             mailbox.select("INBOX")
             criteria = ["ALL"]
@@ -429,29 +485,40 @@ def _fetch_responses():
                 criteria = ["SINCE", since]
             status, data = mailbox.uid("search", None, *criteria)
             if status != "OK":
-                return [], "Could not search inbox responses."
+                return [], "Could not search inbox responses.", None, False
 
             uids = data[0].split()
             responses = []
-            for uid in reversed(uids[-300:]):
+            for uid in reversed(uids[-RESPONSE_SCAN_LIMIT:]):
                 response_id = uid.decode("ascii", errors="ignore")
                 if response_id in ignored_ids:
                     continue
-                status, fetched = mailbox.uid("fetch", uid, "(RFC822)")
+                status, fetched = mailbox.uid(
+                    "fetch",
+                    uid,
+                    "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE IN-REPLY-TO REFERENCES)])",
+                )
+                if status != "OK" or not fetched:
+                    continue
+                raw = next((item[1] for item in fetched if isinstance(item, tuple)), None)
+                if not raw:
+                    continue
+                header_message = email_parser.message_from_bytes(raw)
+                from_name, from_email = parseaddr(header_message.get("From", ""))
+                from_email = from_email.strip().lower()
+                if from_email in own_emails and not _is_reply_message(header_message):
+                    continue
+                if from_email not in contacts:
+                    continue
+                status, fetched = mailbox.uid("fetch", uid, "(BODY.PEEK[])")
                 if status != "OK" or not fetched:
                     continue
                 raw = next((item[1] for item in fetched if isinstance(item, tuple)), None)
                 if not raw:
                     continue
                 message = email_parser.message_from_bytes(raw)
-                from_name, from_email = parseaddr(message.get("From", ""))
-                from_email = from_email.strip().lower()
-                if from_email in own_emails and not _is_reply_message(message):
-                    continue
-                if from_email not in contacts:
-                    continue
-                subject = _decode_header(message.get("Subject", "No subject"))
-                sent_at = message.get("Date", "")
+                subject = _decode_header(header_message.get("Subject", "No subject"))
+                sent_at = header_message.get("Date", "")
                 try:
                     sent_at = parsedate_to_datetime(sent_at).strftime("%Y-%m-%d %H:%M")
                 except (TypeError, ValueError, AttributeError):
@@ -480,15 +547,17 @@ def _fetch_responses():
                 )
                 if len(responses) >= MAX_RESPONSES:
                     break
-            return responses, ""
+            fetched_at = datetime.now()
+            _store_responses_cache(responses, "", fetched_at)
+            return responses, "", fetched_at, False
     except imaplib.IMAP4.error as exc:
-        return [], f"IMAP login or fetch failed: {exc}"
+        return [], f"IMAP login or fetch failed: {exc}", None, False
     except OSError as exc:
-        return [], f"Could not connect to IMAP server: {exc}"
+        return [], f"Could not connect to IMAP server: {exc}", None, False
 
 
 def _send_response_reply(to_email, subject, body):
-    sender_name = _env_value("SENDER_NAME", "Musharp Automation")
+    sender_name = _env_value("SENDER_NAME", "muSharp")
     sender_email = _env_value("SENDER_EMAIL") or _env_value("SMTP_USERNAME", "")
     reply_to = _env_value("REPLY_TO") or sender_email
     html_body = "<br>".join(html.escape(line) for line in body.splitlines())
@@ -596,6 +665,7 @@ def _stash_message_draft():
     draft = {
         "email_subject": request.form.get("email_subject", ""),
         "email_intro": request.form.get("email_intro", ""),
+        "bcc_email": request.form.get("bcc_email", ""),
     }
     if "recipient_email" in request.form:
         draft["recipient_email"] = request.form.get("recipient_email", "")
@@ -834,7 +904,7 @@ def _whatsapp_web_url(phone, text):
     return f"https://wa.me/{digits}?text={quote(text)}"
 
 
-def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None, recipient_email=None):
+def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email_intro=None, preview_image=None, recipient_email=None, bcc_email=None):
     load_dotenv(config.BASE_DIR / ".env", override=True)
     base_niche_cfg = config.NICHES[niche_name]
     sheet = _resolve_sheet(niche_name, base_niche_cfg, requested_sheet)
@@ -866,7 +936,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     niche_cfg = _message_config(niche_name, base_niche_cfg, draft_subject, draft_intro, preview_image)
     templates = niche_cfg.get("templates", [])
 
-    sender_name = os.getenv("SENDER_NAME", "Musharp Automation")
+    sender_name = os.getenv("SENDER_NAME", "muSharp")
     sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", ""))
     sample_business = current_business
     sample_message = None
@@ -910,6 +980,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "selected_image": preview_image or "__default__",
         "email_subject": niche_cfg.get("email_subject", ""),
         "email_intro": niche_cfg.get("email_intro", ""),
+        "bcc_email": bcc_email or "",
         "email_template_filename": template_filename,
         "current_business": current_business,
         "daily_queue": daily_queue,
@@ -950,6 +1021,7 @@ def dashboard():
             draft.get("email_intro"),
             request.args.get("image"),
             draft.get("recipient_email"),
+            draft.get("bcc_email"),
         ),
         run_result=None,
         upload_result=None,
@@ -974,6 +1046,7 @@ def upload_leads():
                 request.form.get("email_intro"),
                 None,
                 request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
             ),
             run_result=None,
             upload_result={"ok": False, "message": "Choose a CSV or Excel lead file first."},
@@ -991,6 +1064,7 @@ def upload_leads():
                 request.form.get("email_intro"),
                 None,
                 request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
             ),
             run_result=None,
             upload_result={"ok": False, "message": "Lead files must be .csv, .xlsx, or .xlsm."},
@@ -1017,6 +1091,7 @@ def upload_leads():
                 request.form.get("email_intro"),
                 None,
                 request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
             ),
             run_result=None,
             upload_result={"ok": False, "message": f"Could not read that file: {exc}"},
@@ -1044,6 +1119,7 @@ def upload_image():
                 request.form.get("email_intro"),
                 None,
                 request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
             ),
             run_result=None,
             upload_result={"ok": False, "message": "Choose an email image first."},
@@ -1066,6 +1142,7 @@ def upload_image():
                     request.form.get("email_intro"),
                     None,
                     request.form.get("recipient_email"),
+                    request.form.get("bcc_email"),
                 ),
                 run_result=None,
                 upload_result={"ok": False, "message": "Images must be .jpg, .jpeg, .png, .webp, or .gif."},
@@ -1158,6 +1235,7 @@ def run_campaign():
                         request.form.get("email_intro"),
                         None,
                         original_email,
+                        request.form.get("bcc_email"),
                     ),
                     run_result={"ok": False, "output": f"Could not update recipient email: {exc}"},
                     upload_result=None,
@@ -1180,12 +1258,15 @@ def run_campaign():
         args.append("--no-whatsapp")
 
     email_subject = request.form.get("email_subject", "").strip()
+    bcc_email = request.form.get("bcc_email", "").strip()
     email_intro = request.form.get("email_intro", "").strip() or _load_niche_email_template(niche_name)[0].strip()
     preview_image = request.form.get("preview_image", "__default__")
     resolved_image = _resolve_image(niche_name, preview_image)
     temp_files = []
     if email_subject:
         args.extend(["--email-subject", email_subject])
+    if bcc_email:
+        args.extend(["--bcc", bcc_email])
     if email_intro:
         email_intro_file = _write_run_text_file("email-intro-", email_intro)
         temp_files.append(email_intro_file)
@@ -1230,6 +1311,7 @@ def run_campaign():
         )
     refresh_subject = None if completed.returncode == 0 and mode == "send" else email_subject
     refresh_recipient_email = None if completed.returncode == 0 and mode == "send" else current_business.email
+    refresh_bcc_email = None if completed.returncode == 0 and mode == "send" else bcc_email
     return render_template(
         "dashboard.html",
         **_build_dashboard(
@@ -1239,6 +1321,7 @@ def run_campaign():
             email_intro,
             preview_image,
             refresh_recipient_email,
+            refresh_bcc_email,
         ),
         run_result={"ok": completed.returncode == 0, "output": output or "Command completed with no output."},
         upload_result=None,
@@ -1289,10 +1372,12 @@ def follow_ups():
 
 @app.get("/responses")
 def responses():
-    rows, error = _fetch_responses()
+    rows, error, fetched_at, cached = _fetch_responses(force_refresh=request.args.get("refresh") == "1")
     return render_template(
         "responses.html",
         rows=rows,
+        fetched_at=fetched_at,
+        cached=cached,
         run_result={"ok": False, "output": error} if error else None,
     )
 
@@ -1303,25 +1388,32 @@ def send_response():
     subject = request.form.get("subject", "").strip() or "Following up"
     body = request.form.get("body", "").strip()
     if not to_email or not body:
-        rows, _ = _fetch_responses()
+        rows, _, fetched_at, cached = _fetch_responses()
         return render_template(
             "responses.html",
             rows=rows,
+            fetched_at=fetched_at,
+            cached=cached,
             run_result={"ok": False, "output": "Write a reply before sending."},
         )
     try:
         _send_response_reply(to_email, subject, body)
-        rows, _ = _fetch_responses()
+        _clear_responses_cache()
+        rows, _, fetched_at, cached = _fetch_responses(force_refresh=True)
         return render_template(
             "responses.html",
             rows=rows,
+            fetched_at=fetched_at,
+            cached=cached,
             run_result={"ok": True, "output": f"Reply sent to {to_email}."},
         )
     except Exception as exc:
-        rows, _ = _fetch_responses()
+        rows, _, fetched_at, cached = _fetch_responses()
         return render_template(
             "responses.html",
             rows=rows,
+            fetched_at=fetched_at,
+            cached=cached,
             run_result={"ok": False, "output": str(exc)},
         )
 
@@ -1333,10 +1425,12 @@ def delete_response():
     subject = request.form.get("subject", "").strip()
     if _ignore_response(response_id, from_email, subject):
         return redirect(url_for("responses", deleted=from_email or "response"))
-    rows, _ = _fetch_responses()
+    rows, _, fetched_at, cached = _fetch_responses()
     return render_template(
         "responses.html",
         rows=rows,
+        fetched_at=fetched_at,
+        cached=cached,
         run_result={"ok": False, "output": "Could not delete that response from the app."},
     )
 

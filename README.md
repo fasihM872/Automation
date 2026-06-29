@@ -1,6 +1,6 @@
-# Email Automations
+# muSharp
 
-Musharp Automation is a Python outreach tool for sending promotional email from
+muSharp is a Python outreach tool for sending promotional email from
 uploaded lead files, managing daily campaign queues, tracking sent mail results,
 and sending follow-up emails.
 
@@ -58,7 +58,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-SENDER_NAME=Musharp Automation
+SENDER_NAME=muSharp
 SENDER_EMAIL=your-email@gmail.com
 REPLY_TO=your-email@gmail.com
 
