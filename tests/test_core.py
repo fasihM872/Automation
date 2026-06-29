@@ -113,6 +113,30 @@ class CoreTests(unittest.TestCase):
             ["boss@example.com", "archive@example.com"],
         )
 
+    def test_email_sender_can_use_business_name_as_from_display(self):
+        class DummyServer:
+            def sendmail(self, sender, recipients, body):
+                self.sender = sender
+                self.recipients = recipients
+                self.body = body
+
+        sender = EmailSender.__new__(EmailSender)
+        sender.sender_name = "Musharp Automation"
+        sender.sender_email = "sender@example.com"
+        sender.reply_to = "reply@example.com"
+        sender._server = DummyServer()
+
+        sender.send(
+            "lead@example.com",
+            "Subject",
+            "<p>Hello</p>",
+            "Hello",
+            from_name="Pitkerro Ltd",
+        )
+
+        self.assertIn("From: Pitkerro Ltd <sender@example.com>", sender._server.body)
+        self.assertEqual(sender._server.sender, "sender@example.com")
+
     def test_inline_image_cid_resolution(self):
         from content import build_message
         from main import Business
@@ -134,8 +158,64 @@ class CoreTests(unittest.TestCase):
             "muSharp",
             "sender@example.com"
         )
-        
         self.assertTrue(any(cid == "dentist_chatbot" for cid, _ in message.inline_images))
+
+    def test_multiple_attachments_resolution(self):
+        from content import build_message
+        from main import Business
+        import tempfile
+        from pathlib import Path
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = Path(tmpdir) / "image1.png"
+            file2 = Path(tmpdir) / "image2.jpg"
+            file1.touch()
+            file2.touch()
+            
+            business = Business(name="Test Clinic", email="test@clinic.com", phone="1234")
+            template = {
+                "name": "Test Niche",
+                "url": "https://test.com",
+                "preview_image": f"{file1.resolve()},{file2.resolve()}"
+            }
+            niche_cfg = {
+                "email_subject": "Test subject",
+                "email_intro": "Hello",
+                "whatsapp_message": "Hello",
+                "templates": [template]
+            }
+            
+            message = build_message(
+                business,
+                template,
+                niche_cfg,
+                "dentists",
+                "muSharp",
+                "sender@example.com"
+            )
+            
+            self.assertEqual(len(message.attachments), 2)
+            self.assertIn(str(file1.resolve()), message.attachments)
+            self.assertIn(str(file2.resolve()), message.attachments)
+    def test_limit_offset_logic(self):
+        import app
+        import tempfile
+        import json
+        from pathlib import Path
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_offset_file = Path(tmpdir) / "limit_offsets.json"
+            original_file = app.LIMIT_OFFSETS_FILE
+            app.LIMIT_OFFSETS_FILE = temp_offset_file
+            try:
+                self.assertEqual(app._get_limit_offset("test_niche"), 0)
+                app._set_limit_offset("test_niche", 5)
+                self.assertEqual(app._get_limit_offset("test_niche"), 5)
+                self.assertTrue(temp_offset_file.exists())
+                data = json.loads(temp_offset_file.read_text(encoding="utf-8"))
+                self.assertIn("test_niche", data)
+            finally:
+                app.LIMIT_OFFSETS_FILE = original_file
 
 
 if __name__ == "__main__":

@@ -284,7 +284,6 @@ def run(args):
             or "Twilio is not configured" in error and not args.no_whatsapp
             or "Lead file" in error
             or "Template" in error
-            or "Preview image" in error
         ]
         if blocking:
             raise RuntimeError("Cannot send yet:\n" + "\n".join(f"- {error}" for error in blocking))
@@ -357,6 +356,7 @@ def run(args):
                         message.inline_images,
                         message.attachments,
                         args.bcc,
+                        from_name=business.name,
                     )
                     if refused:
                         refused_list = ", ".join(refused.keys())

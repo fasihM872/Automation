@@ -789,25 +789,62 @@ def _available_images(niche_name):
     ]
     image_dir = _campaign_image_dir(niche_name)
     if image_dir.exists():
-        latest = next(
-            (
-                path
-                for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True)
-                if path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
-            ),
-            None,
-        )
-        if latest:
-            images.append(
-                {
-                    "label": f"Uploaded: {latest.name}",
-                    "value": _rel(latest),
-                    "uploaded": True,
-                    "name": latest.name,
-                    "url": url_for("project_asset", filename=_rel(latest).replace("\\", "/")),
-                }
-            )
+        files = [
+            path
+            for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True)
+            if path.is_file() and path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
+        ]
+        if files:
+            if len(files) == 1:
+                latest = files[0]
+                images.append(
+                    {
+                        "label": f"Uploaded: {latest.name}",
+                        "value": _rel(latest),
+                        "uploaded": True,
+                        "name": latest.name,
+                        "url": url_for("project_asset", filename=_rel(latest).replace("\\", "/")),
+                    }
+                )
+            else:
+                value = ",".join(_rel(p) for p in files)
+                images.append(
+                    {
+                        "label": f"Uploaded: {len(files)} images",
+                        "value": value,
+                        "uploaded": True,
+                        "name": f"{len(files)} images",
+                        "url": url_for("project_asset", filename=_rel(files[0]).replace("\\", "/")),
+                    }
+                )
     return images
+
+
+LIMIT_OFFSETS_FILE = config.DATA_DIR / "limit_offsets.json"
+
+def _get_limit_offset(niche_name):
+    if not LIMIT_OFFSETS_FILE.exists():
+        return 0
+    try:
+        data = json.loads(LIMIT_OFFSETS_FILE.read_text(encoding="utf-8"))
+        today = date.today().isoformat()
+        return data.get(niche_name, {}).get(today, 0)
+    except Exception:
+        return 0
+
+def _set_limit_offset(niche_name, offset):
+    data = {}
+    if LIMIT_OFFSETS_FILE.exists():
+        try:
+            data = json.loads(LIMIT_OFFSETS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    if niche_name not in data:
+        data[niche_name] = {}
+    today = date.today().isoformat()
+    data[niche_name][today] = offset
+    config.DATA_DIR.mkdir(parents=True, exist_ok=True)
+    LIMIT_OFFSETS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 def _clear_uploaded_images(niche_name):
@@ -854,20 +891,36 @@ def _is_uploaded_sheet(niche_name, sheet):
 
 def _resolve_image(niche_name, requested_image=None):
     if not requested_image or requested_image == "__default__":
+        image_dir = _campaign_image_dir(niche_name)
+        if image_dir.exists():
+            files = [
+                path
+                for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True)
+                if path.is_file() and path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
+            ]
+            if files:
+                return ",".join(_rel(p) for p in files)
         return None
     if requested_image == "__none__":
         return ""
 
-    candidate = Path(requested_image)
-    if not candidate.is_absolute():
-        candidate = config.BASE_DIR / candidate
-    try:
-        resolved = candidate.resolve()
-        resolved.relative_to(_campaign_image_dir(niche_name).resolve())
-        if resolved.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS and resolved.exists():
-            return _rel(resolved)
-    except (OSError, ValueError):
-        pass
+    resolved_paths = []
+    # Support multiple images comma-separated
+    parts = [p.strip() for p in requested_image.split(",") if p.strip()]
+    for part in parts:
+        candidate = Path(part)
+        if not candidate.is_absolute():
+            candidate = config.BASE_DIR / candidate
+        try:
+            resolved = candidate.resolve()
+            resolved.relative_to(_campaign_image_dir(niche_name).resolve())
+            if resolved.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS and resolved.exists():
+                resolved_paths.append(_rel(resolved))
+        except (OSError, ValueError):
+            pass
+
+    if resolved_paths:
+        return ",".join(resolved_paths)
     return None
 
 
@@ -912,7 +965,9 @@ def _preview_image_url(template):
         return ""
     if raw.lower().startswith(("http://", "https://")):
         return raw
-    path = Path(raw)
+    # Get the first image path from the comma-separated list for visual preview on the web dashboard
+    first = raw.split(",")[0].strip()
+    path = Path(first)
     if not path.is_absolute():
         path = config.BASE_DIR / path
     if path.exists():
@@ -942,7 +997,8 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     } if use_db else load_sent(config.SENT_LOG)
     sent_rows = _read_sent_rows()
     sent_today_count = db.sent_today_count(niche_name, date.today().isoformat()) if use_db else _sent_today_count(niche_name, sent_rows)
-    remaining_today = max(DAILY_EMAIL_LIMIT - sent_today_count, 0)
+    offset = _get_limit_offset(niche_name)
+    remaining_today = max(DAILY_EMAIL_LIMIT - max(sent_today_count - offset, 0), 0)
     pending_leads = (
         [_business_from_db(row) for row in db_lead_rows if row.get("status") != "sent"]
         if use_db
@@ -1001,7 +1057,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "sheet": _rel(sheet),
         "available_sheets": _available_sheets(niche_name, niche_cfg),
         "available_images": _available_images(niche_name),
-        "selected_image": preview_image or "__default__",
+        "selected_image": _resolve_image(niche_name, preview_image) or "__default__",
         "email_subject": niche_cfg.get("email_subject", ""),
         "email_intro": niche_cfg.get("email_intro", ""),
         "bcc_email": bcc_email or "",
@@ -1009,7 +1065,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
         "current_business": current_business,
         "daily_queue": daily_queue,
         "daily_limit": DAILY_EMAIL_LIMIT,
-        "sent_today_count": sent_today_count,
+        "sent_today_count": max(sent_today_count - offset, 0),
         "remaining_today": remaining_today,
         "leads": enriched_leads,
         "visible_lead_count": len(enriched_leads),
@@ -1176,14 +1232,37 @@ def upload_image():
         uploaded.save(saved_path)
         saved_paths.append(saved_path)
 
-    selected_path = saved_paths[0]
+    # Join all saved paths as a comma-separated string for URL parameters
+    selected_images = ",".join(_rel(p) for p in saved_paths)
     return redirect(
         url_for(
             "dashboard",
             niche=niche_name,
             sheet=request.form.get("sheet"),
-            image=_rel(selected_path),
+            image=selected_images,
             image_uploaded=f"{len(saved_paths)} image{'s' if len(saved_paths) != 1 else ''}",
+        )
+    )
+
+
+@app.post("/reset-limit")
+def reset_limit():
+    niche_name = request.form.get("niche") or config.ACTIVE_NICHE
+    if niche_name not in config.NICHES:
+        niche_name = config.ACTIVE_NICHE
+
+    use_db = db.has_leads(niche_name)
+    sent_rows = _read_sent_rows()
+    sent_today_count = db.sent_today_count(niche_name, date.today().isoformat()) if use_db else _sent_today_count(niche_name, sent_rows)
+
+    _set_limit_offset(niche_name, sent_today_count)
+
+    return redirect(
+        url_for(
+            "dashboard",
+            niche=niche_name,
+            sheet=request.form.get("sheet"),
+            image=request.form.get("image"),
         )
     )
 
@@ -1229,7 +1308,8 @@ def run_campaign():
     sent_keys = set() if use_db else load_sent(config.SENT_LOG)
     sent_rows = _read_sent_rows()
     today_count = db.sent_today_count(niche_name, date.today().isoformat()) if use_db else _sent_today_count(niche_name, sent_rows)
-    remaining_today = max(DAILY_EMAIL_LIMIT - today_count, 0)
+    offset = _get_limit_offset(niche_name)
+    remaining_today = max(DAILY_EMAIL_LIMIT - max(today_count - offset, 0), 0)
     pending_leads = leads if use_db else [lead for lead in leads if _lead_key(niche_name, lead) not in sent_keys]
     current_business = pending_leads[0] if remaining_today and pending_leads else None
     if not current_business:
@@ -1354,6 +1434,9 @@ def run_campaign():
 
 @app.route("/assets/<path:filename>")
 def project_asset(filename):
+    assets_dir = config.BASE_DIR / "assets"
+    if (assets_dir / filename).exists() and (assets_dir / filename).is_file():
+        return send_from_directory(assets_dir, filename)
     return send_from_directory(config.BASE_DIR, filename)
 
 

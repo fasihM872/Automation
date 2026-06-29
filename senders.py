@@ -3,7 +3,7 @@ import os
 import re
 import smtplib
 import ssl
-from email.utils import getaddresses
+from email.utils import formataddr, getaddresses
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
@@ -102,7 +102,17 @@ class EmailSender:
             part.add_header("Content-Disposition", "attachment", filename=os.path.basename(path))
             root.attach(part)
 
-    def send(self, to_email, subject, html_body, text_body, inline_images=None, attachments=None, bcc=None):
+    def send(
+        self,
+        to_email,
+        subject,
+        html_body,
+        text_body,
+        inline_images=None,
+        attachments=None,
+        bcc=None,
+        from_name=None,
+    ):
         inline_images = inline_images or []
         attachments = attachments or []
         bcc = self._parse_recipients(bcc)
@@ -127,7 +137,7 @@ class EmailSender:
             msg = mixed
 
         msg["Subject"] = subject
-        msg["From"] = f"{self.sender_name} <{self.sender_email}>"
+        msg["From"] = formataddr((from_name or self.sender_name, self.sender_email))
         msg["To"] = to_email
         msg["Reply-To"] = self.reply_to
         return self._server.sendmail(self.sender_email, [to_email, *bcc], msg.as_string())

@@ -171,9 +171,18 @@
           <button type="submit" {% if not current_business or remaining_today == 0 %}disabled{% endif %}>Send Current Email</button>
           {% if remaining_today == 0 %}
           <p class="form-note bad">Daily limit reached for this campaign.</p>
+          <div style="margin-top: 10px;">
+            <button type="button" onclick="document.getElementById('reset-limit-form').submit()" class="secondary-button" style="width: 100%; justify-content: center;">Reset Daily Limit</button>
+          </div>
           {% elif not current_business %}
           <p class="form-note bad">No unsent businesses left in this file.</p>
           {% endif %}
+        </form>
+
+        <form id="reset-limit-form" method="post" action="/reset-limit" style="display: none;">
+          <input type="hidden" name="niche" value="{{ active_niche }}">
+          <input type="hidden" name="sheet" value="{{ sheet }}">
+          <input type="hidden" name="image" value="{{ selected_image }}">
         </form>
 
         <div class="uploaded-files">

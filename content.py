@@ -125,33 +125,23 @@ def _resolve_preview(template):
     """
     Decide how to show the template screenshot in the email.
       - a URL (http/https)        -> not embedded in the body
-      - a local file that exists  -> attached to the email
+      - a local file that exists  -> attached to the email (supports comma-separated list of multiple files)
       - missing / not found yet   -> no image (the email still sends fine)
     Returns (preview_src, inline_images, attachments).
     """
     raw = (template.get("preview_image") or "").strip()
-    if not raw:
-        return "", [], []
-    if raw.lower().startswith(("http://", "https://")):
-        return "", [], []
-    path = Path(raw)
-    if not path.is_absolute():
-        path = config.BASE_DIR / path
-    if path.exists():
-        return "", [], [str(path)]
-    return "", []   # local path given but file isn't there yet — skip rather than break the email
-
-
-def _resolve_preview(template):
-    raw = (template.get("preview_image") or "").strip()
     if not raw or raw.lower().startswith(("http://", "https://")):
         return "", [], []
-    path = Path(raw)
-    if not path.is_absolute():
-        path = config.BASE_DIR / path
-    if path.exists():
-        return "", [], [str(path)]
-    return "", [], []
+    
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    attachments = []
+    for part in parts:
+        path = Path(part)
+        if not path.is_absolute():
+            path = config.BASE_DIR / path
+        if path.exists():
+            attachments.append(str(path))
+    return "", [], attachments
 
 
 def build_message(business, template, niche_cfg, niche_name, sender_name, sender_email, tracking_pixel_url=""):
