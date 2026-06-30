@@ -18,7 +18,11 @@ def normalize_phone(raw, default_cc):
     """
     if not raw:
         return None
-    s = str(raw).strip()
+    default_cc = re.sub(r"\D", "", str(default_cc or ""))
+    candidates = [part.strip() for part in re.split(r"[;,\n\r]+", str(raw)) if part.strip()]
+    if not candidates:
+        candidates = [str(raw).strip()]
+    s = candidates[0]
     if s.startswith("+"):
         digits = re.sub(r"\D", "", s)
         return "+" + digits if len(digits) >= 8 else None
@@ -29,7 +33,7 @@ def normalize_phone(raw, default_cc):
         digits = digits[2:]
     elif digits.startswith("0"):
         digits = default_cc + digits[1:]
-    elif not digits.startswith(default_cc):
+    elif default_cc and not digits.startswith(default_cc):
         digits = default_cc + digits
     return "+" + digits if len(digits) >= 8 else None
 

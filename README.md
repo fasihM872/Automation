@@ -58,7 +58,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-SENDER_NAME=muSharp
+SENDER_NAME=muSharp Business
 SENDER_EMAIL=your-email@gmail.com
 REPLY_TO=your-email@gmail.com
 

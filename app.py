@@ -624,7 +624,7 @@ def _fetch_responses(force_refresh=False):
 
 
 def _send_response_reply(to_email, subject, body):
-    sender_name = _env_value("SENDER_NAME", "muSharp")
+    sender_name = _env_value("SENDER_NAME", "muSharp Business")
     sender_email = _env_value("SENDER_EMAIL") or _env_value("SMTP_USERNAME", "")
     reply_to = _env_value("REPLY_TO") or sender_email
     html_body = "<br>".join(html.escape(line) for line in body.splitlines())
@@ -755,6 +755,8 @@ def _niche_email_template_path(niche_name):
         "hospital": ["hospitals.html", "healthcare.html"],
         "care_homes": ["care-home.html", "carehomes.html", "care_home.html"],
         "pharmacy": ["pharmacies.html"],
+        "gym": ["gyms.html", "fitness.html", "fitness_studio.html", "fitness-studio.html"],
+        "barber": ["barbers.html", "barber_shop.html", "barber-shop.html", "grooming.html"],
     }
     candidates.extend(aliases.get(niche_name, []))
     template_dirs = [config.BASE_DIR / "email_templates"]
@@ -1059,7 +1061,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
     niche_cfg = _message_config(niche_name, base_niche_cfg, draft_subject, draft_intro, preview_image)
     templates = niche_cfg.get("templates", [])
 
-    sender_name = os.getenv("SENDER_NAME", "muSharp")
+    sender_name = os.getenv("SENDER_NAME", "muSharp Business")
     sender_email = os.getenv("SENDER_EMAIL", os.getenv("SMTP_USERNAME", ""))
     sample_business = current_business
     sample_message = None
@@ -1074,6 +1076,7 @@ def _build_dashboard(niche_name, requested_sheet=None, email_subject=None, email
                 "name": lead.name,
                 "email": lead.email,
                 "phone": lead.phone,
+                "db_id": getattr(lead, "db_id", ""),
                 "normalized_phone": normalize_phone(lead.phone, config.DEFAULT_COUNTRY_CODE) or lead.phone,
                 "whatsapp_url": _whatsapp_web_url(lead.phone, sample_message.whatsapp_text)
                 if sample_message and current_business and lead.email == current_business.email and lead.phone == current_business.phone
@@ -1224,6 +1227,56 @@ def upload_leads():
     return redirect(url_for("dashboard", niche=niche_name, sheet=_rel(saved_path), uploaded=message))
 
 
+@app.post("/add-lead")
+def add_manual_lead():
+    niche_name = request.form.get("niche") or config.ACTIVE_NICHE
+    if niche_name not in config.NICHES:
+        niche_name = config.ACTIVE_NICHE
+    _stash_message_draft()
+
+    name = request.form.get("manual_name", "").strip()
+    email = request.form.get("manual_email", "").strip()
+    phone = request.form.get("manual_phone", "").strip()
+    address = request.form.get("manual_address", "").strip()
+    if not name or not email:
+        return render_template(
+            "dashboard.html",
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
+            ),
+            run_result=None,
+            upload_result={"ok": False, "message": "Add a business name and email for the manual lead."},
+        )
+
+    lead = Business(name=name, email=email, phone=phone, address=address)
+    try:
+        import_result = db.import_leads(niche_name, "manual", [lead])
+    except Exception as exc:
+        return render_template(
+            "dashboard.html",
+            **_build_dashboard(
+                niche_name,
+                request.form.get("sheet"),
+                request.form.get("email_subject"),
+                request.form.get("email_intro"),
+                None,
+                request.form.get("recipient_email"),
+                request.form.get("bcc_email"),
+            ),
+            run_result=None,
+            upload_result={"ok": False, "message": f"Could not add that lead: {exc}"},
+        )
+
+    action = "added" if import_result["added"] else "updated"
+    return redirect(url_for("dashboard", niche=niche_name, sheet=request.form.get("sheet"), uploaded=f"{name} {action} manually"))
+
+
 @app.post("/upload-image")
 def upload_image():
     niche_name = request.form.get("niche") or config.ACTIVE_NICHE
@@ -1334,6 +1387,24 @@ def delete_upload():
     db.delete_pending_leads_by_source(niche_name, deleted_name)
     path.unlink(missing_ok=True)
     return redirect(url_for("dashboard", niche=niche_name, deleted=deleted_name))
+
+
+@app.post("/delete-lead")
+def delete_lead():
+    niche_name = request.form.get("niche") or config.ACTIVE_NICHE
+    if niche_name not in config.NICHES:
+        niche_name = config.ACTIVE_NICHE
+    lead_id = request.form.get("lead_id", "").strip()
+    removed = db.delete_pending_lead(lead_id, niche_name) if lead_id else None
+    if removed:
+        label = removed.get("name") or removed.get("email") or "lead"
+        return redirect(url_for("dashboard", niche=niche_name, sheet=request.form.get("sheet"), deleted=f"{label} lead"))
+    return render_template(
+        "dashboard.html",
+        **_build_dashboard(niche_name, request.form.get("sheet")),
+        run_result=None,
+        upload_result={"ok": False, "message": "Only pending database leads can be deleted from this list."},
+    )
 
 
 @app.post("/run")

@@ -9,8 +9,11 @@ from senders import EmailSender, normalize_phone
 
 
 class CoreTests(unittest.TestCase):
-    def test_normalize_local_pakistan_phone(self):
-        self.assertEqual(normalize_phone("03136620237", "92"), "+923136620237")
+    def test_normalize_local_uk_phone(self):
+        self.assertEqual(normalize_phone("01782 664895", "44"), "+441782664895")
+        self.assertEqual(normalize_phone("07870 727289", "44"), "+447870727289")
+        self.assertEqual(normalize_phone("+44 1234 567890", "44"), "+441234567890")
+        self.assertEqual(normalize_phone("01189 514710; 01217 885710", "44"), "+441189514710")
 
     def test_load_current_dentist_lead_file(self):
         leads = list(load_leads(config.DATA_DIR / "leads_dentists.csv"))
@@ -31,6 +34,83 @@ class CoreTests(unittest.TestCase):
         self.assertIn("Sample Clinic", message.html_body)
         self.assertNotIn("Regards", message.html_body)
         self.assertIn("your-demo-host.example/dentist-1", message.whatsapp_text)
+
+    def test_new_gym_and_barber_niches_are_available(self):
+        self.assertIn("gym", config.NICHES)
+        self.assertIn("barber", config.NICHES)
+        self.assertTrue((config.DATA_DIR / "leads_gym.csv").exists())
+        self.assertTrue((config.DATA_DIR / "leads_barber.csv").exists())
+        self.assertIn("gym.html", app.test_client().get("/?niche=gym").get_data(as_text=True))
+        self.assertIn("barber.html", app.test_client().get("/?niche=barber").get_data(as_text=True))
+
+    def test_manual_lead_can_be_added_from_dashboard(self):
+        import db
+
+        niche = "manual_test"
+        original_niches = dict(config.NICHES)
+        original_active = config.ACTIVE_NICHE
+        config.NICHES[niche] = {
+            **config.NICHES["dentists"],
+            "sheet": config.DATA_DIR / "manual_test.csv",
+        }
+        app_module.config.NICHES = config.NICHES
+        try:
+            db.delete_pending_leads_by_source(niche, "manual")
+            response = app.test_client().post(
+                "/add-lead",
+                data={
+                    "niche": niche,
+                    "manual_name": "Manual Gym",
+                    "manual_email": "manual@example.com",
+                    "manual_phone": "01782 664895",
+                },
+                follow_redirects=True,
+            )
+            body = response.get_data(as_text=True)
+            self.assertIn("Manual Gym", body)
+            self.assertIn("manual@example.com", body)
+        finally:
+            db.delete_pending_leads_by_source(niche, "manual")
+            config.NICHES.clear()
+            config.NICHES.update(original_niches)
+            config.ACTIVE_NICHE = original_active
+            app_module.config.NICHES = config.NICHES
+
+    def test_pending_lead_can_be_deleted_from_dashboard(self):
+        import db
+
+        niche = "delete_lead_test"
+        original_niches = dict(config.NICHES)
+        config.NICHES[niche] = {
+            **config.NICHES["dentists"],
+            "sheet": config.DATA_DIR / "delete_lead_test.csv",
+        }
+        app_module.config.NICHES = config.NICHES
+        try:
+            db.delete_pending_leads_by_source(niche, "manual")
+            app.test_client().post(
+                "/add-lead",
+                data={
+                    "niche": niche,
+                    "manual_name": "Delete Me",
+                    "manual_email": "delete@example.com",
+                    "manual_phone": "01782 664895",
+                },
+            )
+            lead_id = db.get_pending_leads(niche, 1)[0]["id"]
+            response = app.test_client().post(
+                "/delete-lead",
+                data={"niche": niche, "lead_id": lead_id},
+                follow_redirects=True,
+            )
+            body = response.get_data(as_text=True)
+            self.assertNotIn("delete@example.com", body)
+            self.assertEqual(db.get_pending_leads(niche, 1), [])
+        finally:
+            db.delete_pending_leads_by_source(niche, "manual")
+            config.NICHES.clear()
+            config.NICHES.update(original_niches)
+            app_module.config.NICHES = config.NICHES
 
     def test_pasted_template_sample_business_name_is_dynamic(self):
         niche = {

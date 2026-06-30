@@ -14,7 +14,7 @@ DATA_DIR = BASE_DIR / "data"
 # ── General sending behaviour ────────────────────────────────────────────────
 SEND_DELAY_SECONDS = 8        # pause between each business (helps avoid spam filters / rate limits)
 MAX_PER_RUN = None            # set to e.g. 50 to cap one run; None = no cap (also see --limit)
-DEFAULT_COUNTRY_CODE = "92"   # turns local numbers into +<code><number> for WhatsApp. 92 = Pakistan.
+DEFAULT_COUNTRY_CODE = "44"   # turns local UK numbers into +44... for WhatsApp.
 
 # Sent-history log. Prevents double-sending if you re-run, and records who got which template.
 SENT_LOG = DATA_DIR / "sent_log.csv"
@@ -142,6 +142,48 @@ NICHES = {
             "Hi {business_name}! I build websites for pharmacies and made a quick demo: "
             "{template_url}\n\nIt can include opening hours, services, prescription/refill info, "
             "delivery, and contact buttons. Reply STOP to opt out."
+        ),
+    },
+    "gym": {
+        "sheet": DATA_DIR / "leads_gym.csv",
+        "templates": [
+            {"name": "Fit Studio", "url": "https://your-demo-host.example/gym-1", "preview_image": "assets/gym-1.png"},
+            {"name": "Strength Club", "url": "https://your-demo-host.example/gym-2", "preview_image": "assets/gym-2.png"},
+            {"name": "Wellness Gym", "url": "https://your-demo-host.example/gym-3", "preview_image": "assets/gym-3.png"},
+        ],
+        "email_subject": "A website preview for {business_name}",
+        "email_intro": (
+            "We came across ur business {business_name} and noticed that a clean, "
+            "mobile-friendly website could help members find classes, trainers, pricing, "
+            "opening hours, location, and membership options quickly.\n\n"
+            "I can build a professional website for your gym or fitness studio for $200. "
+            "I am also giving free chatbot services."
+        ),
+        "whatsapp_message": (
+            "Hi {business_name}! I build websites for gyms and fitness studios. Here is a demo: "
+            "{template_url}\n\nIt can include class schedules, memberships, trainer profiles, "
+            "lead capture, and contact buttons. Reply STOP to opt out."
+        ),
+    },
+    "barber": {
+        "sheet": DATA_DIR / "leads_barber.csv",
+        "templates": [
+            {"name": "Sharp Cuts", "url": "https://your-demo-host.example/barber-1", "preview_image": "assets/barber-1.png"},
+            {"name": "Modern Barber", "url": "https://your-demo-host.example/barber-2", "preview_image": "assets/barber-2.png"},
+            {"name": "Classic Grooming", "url": "https://your-demo-host.example/barber-3", "preview_image": "assets/barber-3.png"},
+        ],
+        "email_subject": "A website preview for {business_name}",
+        "email_intro": (
+            "We came across ur business {business_name} and noticed that a clean, "
+            "mobile-friendly website could help customers view services, prices, opening "
+            "hours, location, and book appointments quickly.\n\n"
+            "I can build a professional website for your barber shop for $200. "
+            "I am also giving free chatbot services."
+        ),
+        "whatsapp_message": (
+            "Hi {business_name}! I build websites for barber shops and grooming studios. "
+            "Here is a demo: {template_url}\n\nIt can include services, pricing, gallery, "
+            "booking/contact buttons, and opening hours. Reply STOP to opt out."
         ),
     },
 }

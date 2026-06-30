@@ -66,6 +66,7 @@
             {% if setup.errors %}Needs setup{% else %}Ready{% endif %}
           </span>
         </div>
+        <button class="secondary-button add-leads-button" type="button" data-open-add-lead>Add leads</button>
 
         {% if setup.errors %}
         <ul class="setup-list">
@@ -110,6 +111,40 @@
             <button type="submit">Upload</button>
           </div>
         </form>
+
+        <div class="modal-backdrop" data-add-lead-modal hidden>
+          <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="add-lead-title">
+            <div class="modal-heading">
+              <h2 id="add-lead-title">Add leads</h2>
+              <button class="icon-button" type="button" aria-label="Close" data-close-add-lead>&times;</button>
+            </div>
+            <form class="manual-lead-form" method="post" action="/add-lead">
+              <input type="hidden" name="niche" value="{{ active_niche }}">
+              <input type="hidden" name="sheet" value="{{ sheet }}">
+              <input type="hidden" name="email_subject" data-draft-subject>
+              <input type="hidden" name="email_intro" data-draft-intro>
+              <input type="hidden" name="recipient_email" data-draft-recipient-email>
+              <input type="hidden" name="bcc_email" data-draft-bcc-email>
+              <div class="field">
+                <label for="manual_name">Business name</label>
+                <input id="manual_name" name="manual_name" type="text" required placeholder="Business name">
+              </div>
+              <div class="field">
+                <label for="manual_email">Email</label>
+                <input id="manual_email" name="manual_email" type="email" required placeholder="lead@example.com">
+              </div>
+              <div class="field">
+                <label for="manual_phone">Number</label>
+                <input id="manual_phone" name="manual_phone" type="tel" placeholder="01782 664895">
+              </div>
+              <div class="field">
+                <label for="manual_address">Address</label>
+                <input id="manual_address" name="manual_address" type="text" placeholder="Optional">
+              </div>
+              <button type="submit">Add lead</button>
+            </form>
+          </div>
+        </div>
 
         <form class="run-form" method="post" action="/run">
           <input type="hidden" name="niche" value="{{ active_niche }}">
@@ -172,7 +207,7 @@
           {% if remaining_today == 0 %}
           <p class="form-note bad">Daily limit reached for this campaign.</p>
           <div style="margin-top: 10px;">
-            <button type="button" onclick="document.getElementById('reset-limit-form').submit()" class="secondary-button" style="width: 100%; justify-content: center;">Reset Daily Limit</button>
+            <button type="button" onclick="document.getElementById('reset-limit-form').submit()" class="secondary-button reset-limit-button" style="width: 100%; justify-content: center;">Reset Daily Limit</button>
           </div>
           {% elif not current_business %}
           <p class="form-note bad">No unsent businesses left in this file.</p>
@@ -268,6 +303,7 @@
                 <th>Email</th>
                 <th>WhatsApp</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -287,6 +323,18 @@
                   <span class="pill {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}queued{% endif %}">
                     {% if lead.sent %}sent{% elif lead.current %}current{% elif lead.queued %}today{% else %}pending{% endif %}
                   </span>
+                </td>
+                <td>
+                  {% if lead.db_id and not lead.sent %}
+                  <form method="post" action="/delete-lead" onsubmit="return confirm('Delete this lead from the campaign?');">
+                    <input type="hidden" name="niche" value="{{ active_niche }}">
+                    <input type="hidden" name="sheet" value="{{ sheet }}">
+                    <input type="hidden" name="lead_id" value="{{ lead.db_id }}">
+                    <button class="danger-button table-action-button" type="submit">Delete</button>
+                  </form>
+                  {% else %}
+                  <span class="muted-action">Locked</span>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
@@ -358,6 +406,9 @@
       const subject = document.querySelector("#email_subject");
       const recipientEmail = document.querySelector("#recipient_email");
       const bccEmail = document.querySelector("#bcc_email");
+      const addLeadModal = document.querySelector("[data-add-lead-modal]");
+      const openAddLead = document.querySelector("[data-open-add-lead]");
+      const closeAddLead = document.querySelector("[data-close-add-lead]");
 
       function plainTextToHtml(value) {
         return value
@@ -420,18 +471,42 @@
       textarea.addEventListener("input", renderPreview);
       window.addEventListener("resize", resizePreviewFrame);
 
-      document.querySelectorAll("form.upload-form").forEach((form) => {
+      function copyDraftFields(form) {
+        const subjectInput = form.querySelector("[data-draft-subject]");
+        const introInput = form.querySelector("[data-draft-intro]");
+        const recipientInput = form.querySelector("[data-draft-recipient-email]");
+        const bccInput = form.querySelector("[data-draft-bcc-email]");
+        if (subjectInput && subject) subjectInput.value = subject.value;
+        if (introInput) introInput.value = textarea.value;
+        if (recipientInput && recipientEmail) recipientInput.value = recipientEmail.value;
+        if (bccInput && bccEmail) bccInput.value = bccEmail.value;
+      }
+
+      document.querySelectorAll("form.upload-form, form.manual-lead-form").forEach((form) => {
         form.addEventListener("submit", () => {
-          const subjectInput = form.querySelector("[data-draft-subject]");
-          const introInput = form.querySelector("[data-draft-intro]");
-          const recipientInput = form.querySelector("[data-draft-recipient-email]");
-          const bccInput = form.querySelector("[data-draft-bcc-email]");
-          if (subjectInput && subject) subjectInput.value = subject.value;
-          if (introInput) introInput.value = textarea.value;
-          if (recipientInput && recipientEmail) recipientInput.value = recipientEmail.value;
-          if (bccInput && bccEmail) bccInput.value = bccEmail.value;
+          copyDraftFields(form);
         });
       });
+      if (openAddLead && addLeadModal) {
+        openAddLead.addEventListener("click", () => {
+          addLeadModal.hidden = false;
+          const firstInput = addLeadModal.querySelector("input[name='manual_name']");
+          if (firstInput) firstInput.focus();
+        });
+      }
+      if (closeAddLead && addLeadModal) {
+        closeAddLead.addEventListener("click", () => {
+          addLeadModal.hidden = true;
+        });
+      }
+      if (addLeadModal) {
+        addLeadModal.addEventListener("click", (event) => {
+          if (event.target === addLeadModal) addLeadModal.hidden = true;
+        });
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") addLeadModal.hidden = true;
+        });
+      }
       renderPreview();
     })();
   </script>

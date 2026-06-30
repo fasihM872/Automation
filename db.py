@@ -204,6 +204,22 @@ def delete_pending_leads_by_source(niche, source_name):
         )
 
 
+def delete_pending_lead(lead_id, niche):
+    init_db()
+    with connect() as conn:
+        cursor = _execute(
+            conn,
+            "SELECT * FROM leads WHERE id = ? AND niche = ? AND status != 'sent'",
+            (lead_id, niche),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        removed = dict(row) if not _is_postgres() else dict(zip([column[0] for column in cursor.description], row))
+        _execute(conn, "DELETE FROM leads WHERE id = ? AND niche = ? AND status != 'sent'", (lead_id, niche))
+        return removed
+
+
 def update_lead_email(lead_id, email):
     init_db()
     with connect() as conn:
