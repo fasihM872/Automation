@@ -15,6 +15,7 @@ from email.utils import parseaddr, parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import quote
 
+
 from dotenv import dotenv_values, load_dotenv
 from flask import Flask, redirect, render_template, request, Response, send_from_directory, session, url_for
 from werkzeug.utils import secure_filename
@@ -68,6 +69,12 @@ IGNORED_RESPONSE_FIELDNAMES = ["response_id", "ignored_at", "from_email", "subje
 MAX_RESPONSES = 50
 RESPONSE_SCAN_LIMIT = 120
 _RESPONSES_CACHE = {"rows": None, "error": "", "fetched_at": None}
+QUOTED_CAMPAIGN_MARKERS = (
+    "A Professional Website for ",
+    "Attached is a preview for your new website",
+    "We came across ur business ",
+    "Designed & Powered by muSharp",
+)
 PIXEL_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
     b"\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,"
@@ -172,6 +179,40 @@ def _store_responses_cache(rows, error, fetched_at):
         )
 
 
+def _clean_response_body(body):
+    text = html.unescape(body or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not text:
+        return ""
+
+    marker_positions = [
+        index
+        for marker in QUOTED_CAMPAIGN_MARKERS
+        for index in [text.find(marker)]
+        if index >= 0
+    ]
+    if marker_positions:
+        text = text[: min(marker_positions)].strip()
+
+    text = re.sub(r"(?is)<(script|style).*?>.*?</\1>", "", text)
+    text = re.sub(r"(?s)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?s)</p\s*>", "\n\n", text)
+    text = re.sub(r"(?s)<.*?>", "", text)
+    text = re.sub(r"(?m)^\s*/\*.*?\*/\s*$", "", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _clean_response_rows(rows):
+    cleaned_rows = []
+    for row in rows:
+        cleaned = dict(row)
+        body = _clean_response_body(cleaned.get("body") or cleaned.get("preview") or "")
+        cleaned["body"] = body
+        cleaned["preview"] = body[:260]
+        cleaned_rows.append(cleaned)
+    return cleaned_rows
+
+
 def _cached_responses():
     fetched_at = _RESPONSES_CACHE.get("fetched_at")
     rows = _RESPONSES_CACHE.get("rows")
@@ -179,7 +220,7 @@ def _cached_responses():
         try:
             with open(RESPONSES_CACHE_FILE, encoding="utf-8") as fh:
                 payload = json.load(fh)
-            rows = payload.get("rows") or []
+            rows = _clean_response_rows(payload.get("rows") or [])
             fetched_at_raw = payload.get("fetched_at") or ""
             fetched_at = datetime.fromisoformat(fetched_at_raw) if fetched_at_raw else None
             _RESPONSES_CACHE.update(
@@ -193,6 +234,8 @@ def _cached_responses():
             return None
     if rows is None or not fetched_at:
         return None
+    rows = _clean_response_rows(rows)
+    _RESPONSES_CACHE["rows"] = rows
     return rows, _RESPONSES_CACHE.get("error", ""), fetched_at
 
 
@@ -548,7 +591,7 @@ def _fetch_responses(force_refresh=False):
                 except (TypeError, ValueError, AttributeError):
                     pass
                 contact = contacts[from_email]
-                body = _message_text(message)
+                body = _clean_response_body(_message_text(message))
                 if _is_legacy_campaign_text(
                     subject,
                     body,

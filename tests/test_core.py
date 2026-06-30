@@ -82,6 +82,56 @@ class CoreTests(unittest.TestCase):
             app_module.IGNORED_RESPONSES_LOG.unlink(missing_ok=True)
             app_module.IGNORED_RESPONSES_LOG = original_log
 
+    def test_response_preview_strips_quoted_campaign_css(self):
+        raw_body = (
+            "Thank you for contacting CDS. This email is monitored throughout the day.\n\n"
+            "A Professional Website for Bedford Heights Hospital\n"
+            "/* Reset and general styles */\n"
+            "body, table, td, a {\n"
+            "-webkit-text-size-adjust: 100%;\n"
+            "}\n"
+            "Attached is a preview for your new website. Get it live for $200.\n"
+        )
+
+        cleaned = app_module._clean_response_body(raw_body)
+
+        self.assertEqual(
+            cleaned,
+            "Thank you for contacting CDS. This email is monitored throughout the day.",
+        )
+
+    def test_cached_responses_are_cleaned_before_display(self):
+        original_cache_file = app_module.RESPONSES_CACHE_FILE
+        original_memory_cache = dict(app_module._RESPONSES_CACHE)
+        app_module._RESPONSES_CACHE.update({"rows": None, "error": "", "fetched_at": None})
+        try:
+            import json
+            import tempfile
+            from pathlib import Path
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                app_module.RESPONSES_CACHE_FILE = Path(tmpdir) / "responses_cache.json"
+                payload = {
+                    "rows": [
+                        {
+                            "body": "Thanks for your email.\n\nAttached is a preview for your new website.",
+                            "preview": "Attached is a preview for your new website.",
+                        }
+                    ],
+                    "error": "",
+                    "fetched_at": "2026-06-30T11:29:43",
+                }
+                app_module.RESPONSES_CACHE_FILE.write_text(json.dumps(payload), encoding="utf-8")
+
+                rows, _, _ = app_module._cached_responses()
+
+                self.assertEqual(rows[0]["body"], "Thanks for your email.")
+                self.assertEqual(rows[0]["preview"], "Thanks for your email.")
+        finally:
+            app_module.RESPONSES_CACHE_FILE = original_cache_file
+            app_module._RESPONSES_CACHE.clear()
+            app_module._RESPONSES_CACHE.update(original_memory_cache)
+
     def test_email_sender_bcc_is_envelope_only(self):
         class DummyServer:
             def sendmail(self, sender, recipients, body):
