@@ -839,29 +839,16 @@ def _available_images(niche_name):
             for path in sorted(image_dir.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True)
             if path.is_file() and path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
         ]
-        if files:
-            if len(files) == 1:
-                latest = files[0]
-                images.append(
-                    {
-                        "label": f"Uploaded: {latest.name}",
-                        "value": _rel(latest),
-                        "uploaded": True,
-                        "name": latest.name,
-                        "url": url_for("project_asset", filename=_rel(latest).replace("\\", "/")),
-                    }
-                )
-            else:
-                value = ",".join(_rel(p) for p in files)
-                images.append(
-                    {
-                        "label": f"Uploaded: {len(files)} images",
-                        "value": value,
-                        "uploaded": True,
-                        "name": f"{len(files)} images",
-                        "url": url_for("project_asset", filename=_rel(files[0]).replace("\\", "/")),
-                    }
-                )
+        for path in files:
+            images.append(
+                {
+                    "label": f"Uploaded: {path.name}",
+                    "value": _rel(path),
+                    "uploaded": True,
+                    "name": path.name,
+                    "url": url_for("project_asset", filename=_rel(path).replace("\\", "/")),
+                }
+            )
     return images
 
 
@@ -1303,7 +1290,6 @@ def upload_image():
 
     image_dir = _campaign_image_dir(niche_name)
     image_dir.mkdir(parents=True, exist_ok=True)
-    _clear_uploaded_images(niche_name)
     saved_paths = []
     for index, uploaded in enumerate(uploaded_files, start=1):
         original_name = secure_filename(uploaded.filename)
@@ -1478,7 +1464,8 @@ def run_campaign():
     email_subject = request.form.get("email_subject", "").strip()
     bcc_email = request.form.get("bcc_email", "").strip()
     email_intro = request.form.get("email_intro", "").strip() or _load_niche_email_template(niche_name)[0].strip()
-    preview_image = request.form.get("preview_image", "__default__")
+    preview_images = [value for value in request.form.getlist("preview_image") if value]
+    preview_image = ",".join(preview_images) if preview_images else request.form.get("preview_image", "__default__")
     resolved_image = _resolve_image(niche_name, preview_image)
     temp_files = []
     if email_subject:

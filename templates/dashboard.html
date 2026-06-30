@@ -191,12 +191,14 @@
           </div>
           <div class="field">
             <label for="preview_image">Email image</label>
-            <select id="preview_image" name="preview_image" onchange="window.location='/?niche={{ active_niche }}&sheet={{ sheet|urlencode }}&image=' + encodeURIComponent(this.value)">
+            {% set selected_images = selected_image.split(",") if selected_image else [] %}
+            <select id="preview_image" name="preview_image" multiple size="6">
               {% for image in available_images %}
-              <option value="{{ image.value }}" {% if image.value == selected_image %}selected{% endif %}>{{ image.label }}</option>
+              <option value="{{ image.value }}" {% if image.value in selected_images or image.value == selected_image %}selected{% endif %}>{{ image.label }}</option>
               {% endfor %}
             </select>
-            <p class="form-note">Choose the image embedded in the email.</p>
+            <button class="secondary-button" type="button" onclick="updateImageSelection(document.getElementById('preview_image'))">Apply selected images</button>
+            <p class="form-note">Select one or more niche images to attach with the email.</p>
           </div>
           <div class="check-grid">
             <label><input type="checkbox" name="preview" checked> Write email preview</label>
@@ -397,6 +399,14 @@
     </section>
   </main>
   <script>
+    function updateImageSelection(select) {
+      const values = Array.from(select.selectedOptions).map((option) => option.value);
+      const image = values.includes("__none") || values.includes("__default__")
+        ? values[values.length - 1]
+        : values.join(",");
+      window.location = "/?niche={{ active_niche }}&sheet={{ sheet|urlencode }}&image=" + encodeURIComponent(image || "__default__");
+    }
+
     (function () {
       const editor = document.querySelector("[data-cover-editor]");
       if (!editor) return;

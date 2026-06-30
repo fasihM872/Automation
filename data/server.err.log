@@ -1,34 +1,93 @@
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 976-136-684
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
-127.0.0.1 - - [30/Jun/2026 11:39:46] "GET /health HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:39:47] "GET /responses HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:40:00] "GET /responses HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:40:56] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:40:57] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:40:57] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:52:37] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:52:37] "GET /static/styles.css HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:52:37] "GET /static/musharp-logo.svg HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:52:38] "GET /favicon.ico HTTP/1.1" 404 -
-127.0.0.1 - - [30/Jun/2026 11:53:24] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:53:24] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:53:24] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:54:34] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:54:34] "GET /static/styles.css HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:54:34] "GET /static/musharp-logo.svg HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:54:35] "GET /favicon.ico HTTP/1.1" 404 -
-127.0.0.1 - - [30/Jun/2026 11:54:39] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:56:56] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:56:56] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:56:56] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:58:33] "GET /responses?refresh=1 HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 11:58:33] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 11:58:33] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:41] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 12:18:41] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:41] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /assets/dentist_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /assets/dentist_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 12:18:42] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [30/Jun/2026 16:24:00] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /static/musharp-logo.svg HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /static/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_location.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:25:39] "GET /favicon.ico HTTP/1.1" 404 -
+C:\Users\musharp\AppData\Roaming\Python\Python312\site-packages\werkzeug\sansio\response.py:235: UserWarning: The 'session' cookie is too large: the value was 4560 bytes but the header required 26 extra bytes. The final size was 4586 bytes but the limit is 4093 bytes. Browsers may silently ignore cookies larger than this.
+  dump_cookie(
+127.0.0.1 - - [30/Jun/2026 16:27:51] "POST /upload-image HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/data/email_images/plumber/plumbing%202.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/plumbing_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/plumbing_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:57] "GET /assets/plumbing_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:57] "GET /assets/plumbing_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /assets/data/email_images/plumber/plumbing%202.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:42] "GET /?niche=hospital HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:08] "GET /?niche=dentists HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:10] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:36] "GET /?niche=barber HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:13:36] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_location.png HTTP/1.1" 200 -
+ * Detected change in 'D:\\emailauto\\Automation\\tests\\test_core.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 976-136-684
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\emailauto\\Automation\\app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 976-136-684
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\emailauto\\Automation\\app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 976-136-684
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [30/Jun/2026 17:42:22] "GET /?niche=barber HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:42:22] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:24] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /?niche=dentists HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_location.png HTTP/1.1" 304 -

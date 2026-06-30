@@ -327,6 +327,64 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(len(message.attachments), 2)
             self.assertIn(str(file1.resolve()), message.attachments)
             self.assertIn(str(file2.resolve()), message.attachments)
+
+    def test_available_images_lists_each_niche_image(self):
+        import app
+        import tempfile
+        from pathlib import Path
+
+        original_image_dir = app.IMAGE_DIR
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app.IMAGE_DIR = Path(tmpdir)
+            niche_dir = app.IMAGE_DIR / "plumber"
+            niche_dir.mkdir(parents=True)
+            first = niche_dir / "first.png"
+            second = niche_dir / "second.jpg"
+            first.touch()
+            second.touch()
+            try:
+                with app.app.test_request_context("/"):
+                    images = app._available_images("plumber")
+            finally:
+                app.IMAGE_DIR = original_image_dir
+
+        uploaded = [image for image in images if image.get("uploaded")]
+        self.assertEqual({image["name"] for image in uploaded}, {"first.png", "second.jpg"})
+        self.assertEqual(len(uploaded), 2)
+
+    def test_upload_image_keeps_existing_niche_images(self):
+        import app
+        import tempfile
+        from pathlib import Path
+        from io import BytesIO
+
+        original_image_dir = app.IMAGE_DIR
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app.IMAGE_DIR = Path(tmpdir)
+            niche_dir = app.IMAGE_DIR / "plumber"
+            niche_dir.mkdir(parents=True)
+            existing = niche_dir / "existing.png"
+            existing.write_bytes(b"old")
+            try:
+                client = app.app.test_client()
+                response = client.post(
+                    "/upload-image",
+                    data={
+                        "niche": "plumber",
+                        "sheet": "",
+                        "email_image": (BytesIO(b"new"), "new.png"),
+                    },
+                    content_type="multipart/form-data",
+                    follow_redirects=False,
+                )
+                saved_names = {path.name for path in niche_dir.iterdir()}
+            finally:
+                app.IMAGE_DIR = original_image_dir
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("existing.png", saved_names)
+        self.assertTrue(any(name.startswith("new-") and name.endswith(".png") for name in saved_names))
+
     def test_limit_offset_logic(self):
         import app
         import tempfile
