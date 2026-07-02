@@ -1,361 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
   <title>A mobile-friendly website preview for {business_name}</title>
-  <!-- Google Font: Outfit for modern email clients -->
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
-  
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
   <style>
-    /* Reset and general styles */
-    body, table, td, a {
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-    table, td {
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-    }
-    table {
-      border-collapse: collapse !important;
-    }
-    body {
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      background-color: #F8FAFC;
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    /* Interactive animations (supported clients) */
-    .cta-button:hover {
-      background-color: #0369A1 !important;
-      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4) !important;
-      transform: translateY(-2px);
-    }
-    .feature-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    }
-    .feature-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important;
-    }
-    .footer-link:hover {
-      color: #BAE6FD !important;
-    }
-    .social-icon:hover {
-      transform: scale(1.1);
-      opacity: 1 !important;
-    }
-
-    /* Responsive styles */
-    @media screen and (max-width: 680px) {
-      body {
-        min-width: 0 !important;
-        width: 100% !important;
-      }
-      table {
-        max-width: 100% !important;
-      }
-      img {
-        max-width: 100% !important;
-        height: auto !important;
-      }
-      .outer-padding {
-        padding: 0 !important;
-      }
-      .email-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        border-radius: 0 !important;
-      }
-      .content-padding {
-        padding: 24px 18px !important;
-      }
-      .column {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-      .column table,
-      .feature-card {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      .feature-card {
-        height: auto !important;
-      }
-      .col-gap {
-        display: block !important;
-        height: 16px !important;
-        width: 100% !important;
-      }
-      .hero-title {
-        font-size: 28px !important;
-        line-height: 34px !important;
-        letter-spacing: 0 !important;
-      }
-      .hero-desc {
-        font-size: 15px !important;
-        line-height: 24px !important;
-      }
-      .features-title {
-        font-size: 21px !important;
-        line-height: 28px !important;
-        margin-bottom: 16px !important;
-      }
-      .feature-card-title {
-        font-size: 18px !important;
-        line-height: 24px !important;
-      }
-      .footer-action-cell {
-        display: block !important;
-        width: 100% !important;
-        float: none !important;
-        margin-bottom: 18px !important;
-        text-align: center !important;
-      }
-      .footer-action-cell-inner {
-        padding: 0 !important;
-      }
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+    body{margin:0;padding:0;width:100%!important;background:#eef0f4;}
+    a{color:#4f46e5;}
+    @media only screen and (max-width:600px){
+      .container{width:100%!important;}
+      .px{padding-left:24px!important;padding-right:24px!important;}
+      .h1{font-size:24px!important;line-height:32px!important;}
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #F8FAFC;">
-  <!-- Main outer table wrapper -->
-  <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="table-layout: fixed; background-color: #F8FAFC;">
+<body style="margin:0;padding:0;background:#eef0f4;">
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#eef0f4;">
+    I designed a few homepages for {business_name} - designs attached. Reply with the one you like.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f4;">
     <tr>
-      <td class="outer-padding" align="center" style="padding: 40px 10px;">
-        <!-- Email Container (600px width limit) -->
-        <table class="email-container" width="680" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width: 680px; max-width: 680px; background-color: #FFFFFF; border-radius: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04); overflow: hidden; border: 1px solid #E2E8F0;">
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,25,40,0.08);">
 
-          <!-- Hero Content Section -->
+          <!-- Sender -->
           <tr>
-            <td class="content-padding" style="padding: 32px 40px 16px; background-color: #FFFFFF;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td align="left">
-                    <h1 class="hero-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 34px; font-weight: 800; line-height: 42px; color: #0F172A; letter-spacing: -0.5px;">A mobile-friendly website preview for {business_name}</h1>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="left" style="padding-top: 18px;">
-                    <p class="hero-desc" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 400; line-height: 27px; color: #475569;">
-                      We came across your business <strong style="font-weight: 700; color: #0F172A;">{business_name}</strong> and noticed that a clean, mobile-friendly website could help customers quickly find your services, timings, location, and contact details.
-                    </p>
-                    <p class="hero-desc" style="margin: 16px 0 0; font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 400; line-height: 27px; color: #475569;">
-                      I've created a preview version of a website tailored for your business and attached it to this email for your review.
-                    </p>
-                    <p class="hero-desc" style="margin: 16px 0 0; font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 400; line-height: 27px; color: #475569;">
-                      To have the website fully developed and launched, the cost is just <strong style="font-weight: 700; color: #0284C7;">$200</strong>. This package also includes a <strong style="font-weight: 700; color: #0F172A;">free AI chatbot</strong> along with additional value-added services to help enhance your online presence and customer engagement.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Features Section Header -->
-          <tr>
-            <td class="content-padding" style="padding: 12px 40px 8px; background-color: #FFFFFF;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td align="left">
-                    <h2 class="features-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; line-height: 30px; color: #0F172A; letter-spacing: -0.3px;">
-                      What your new website will include:
-                    </h2>
-                  </td>
-                </tr>
-              </table>
+            <td class="px" style="padding:26px 40px 0 40px;font-family:Helvetica,Arial,sans-serif;">
+              <span style="font-size:14px;font-weight:700;color:#1a2332;letter-spacing:.1px;">muSharp</span>
             </td>
           </tr>
 
-          <!-- Features Cards Section -->
+          <!-- Headline -->
           <tr>
-            <td class="content-padding" style="padding: 0 40px 20px; background-color: #FFFFFF;">
-              
-              <!-- Two Column Grid for Chatbot & SEO/Analytics -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="table-layout: fixed;">
-                <tr>
-                  <!-- Column 1: AI Chatbot -->
-                  <td class="column" width="290" valign="top">
-                    <table class="feature-card" width="100%" height="180" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: 1px solid #F1F5F9; border-radius: 16px; background-color: #FFFFFF; border-collapse: separate !important; height: 180px;">
-                      <tr>
-                        <td style="padding: 18px 20px;">
-                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                            <tr>
-                              <td align="left" style="padding-bottom: 10px;">
-                                <img src="cid:plumbing_chatbot" width="56" height="56" alt="chatbot" style="display: block; border: 0; width: 56px; height: 56px;">
-                              </td>
-                            </tr>
-                            <tr>
-                              <td align="left">
-                                <span style="display: inline-block; background-color: #E0F2FE; color: #0369A1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; margin-bottom: 8px;">Free Bonus Upgrade</span>
-                                <h3 class="feature-card-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 19px; font-weight: 700; line-height: 25px; color: #0F172A;">
-                                  AI Chatbot Setup
-                                </h3>
-                                <p style="margin: 4px 0 0; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 400; line-height: 22px; color: #475569;">
-                                  Capture urgent repair leads and automate booking schedules 24/7 at zero cost.
-                                </p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-
-                  <!-- Spacer -->
-                  <td class="col-gap" width="20" style="font-size: 0; line-height: 0;">&nbsp;</td>
-
-                  <!-- Column 2: SEO & Analytics -->
-                  <td class="column" width="290" valign="top">
-                    <table class="feature-card" width="100%" height="180" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: 1px solid #F1F5F9; border-radius: 16px; background-color: #FFFFFF; border-collapse: separate !important; height: 180px;">
-                      <tr>
-                        <td style="padding: 18px 20px;">
-                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                            <tr>
-                              <td align="left" style="padding-bottom: 10px;">
-                                <!-- SEO & Analytics Icon SVG -->
-                                <img src="cid:plumbing_seo" width="56" height="56" alt="seo" style="display: block; border: 0; width: 56px; height: 56px;">
-                              </td>
-                            </tr>
-                            <tr>
-                              <td align="left">
-                                <h3 class="feature-card-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 19px; font-weight: 700; line-height: 25px; color: #0F172A;">
-                                  SEO &amp; Analytics Setup &amp; Reporting
-                                </h3>
-                                <p style="margin: 4px 0 0; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 400; line-height: 22px; color: #475569;">
-                                  Rank higher on Google searches and track plumbing service area visitors with built-in analytics.
-                                </p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- Row 2: Core Site Features -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 14px; table-layout: fixed;">
-                <tr>
-                  <!-- Column 1: Services & Pricing -->
-                  <td class="column" width="290" valign="top">
-                    <table class="feature-card" width="100%" height="180" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: 1px solid #F1F5F9; border-radius: 16px; background-color: #FFFFFF; border-collapse: separate !important; height: 180px;">
-                      <tr>
-                        <td style="padding: 18px 20px;">
-                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                            <tr>
-                              <td align="left" style="padding-bottom: 10px;">
-                                <!-- Wrench & Gear Icon SVG -->
-                                <img src="cid:plumbing_services" width="56" height="56" alt="services" style="display: block; border: 0; width: 56px; height: 56px;">
-                              </td>
-                            </tr>
-                            <tr>
-                              <td align="left">
-                                <h3 class="feature-card-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 19px; font-weight: 700; line-height: 25px; color: #0F172A;">
-                                  Services &amp; Pricing
-                                </h3>
-                                <p style="margin: 4px 0 0; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 400; line-height: 22px; color: #475569;">
-                                  Display repair rates, leak detection details, and installation packages clearly.
-                                </p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-
-                  <!-- Spacer between columns -->
-                  <td class="col-gap" width="20" style="font-size: 0; line-height: 0;">&nbsp;</td>
-
-                  <!-- Column 2: Emergency Service Areas -->
-                  <td class="column" width="290" valign="top">
-                    <table class="feature-card" width="100%" height="180" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: 1px solid #F1F5F9; border-radius: 16px; background-color: #FFFFFF; border-collapse: separate !important; height: 180px;">
-                      <tr>
-                        <td style="padding: 18px 20px;">
-                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                            <tr>
-                              <td align="left" style="padding-bottom: 10px;">
-                                <!-- Truck & Shield Icon SVG -->
-                                <img src="cid:plumbing_location" width="56" height="56" alt="location" style="display: block; border: 0; width: 56px; height: 56px;">
-                              </td>
-                            </tr>
-                            <tr>
-                              <td align="left">
-                                <h3 class="feature-card-title" style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 19px; font-weight: 700; line-height: 25px; color: #0F172A;">
-                                  Emergency Service
-                                </h3>
-                                <p style="margin: 4px 0 0; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 400; line-height: 22px; color: #475569;">
-                                  Let clients check map coverage, request dispatcher updates, and schedule callouts.
-                                </p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-
+            <td class="px" style="padding:18px 40px 0 40px;font-family:Helvetica,Arial,sans-serif;">
+              <h1 class="h1" style="margin:0;font-size:28px;line-height:36px;color:#1a2332;font-weight:700;">
+                I designed a homepage for {business_name}
+              </h1>
+              <p style="margin:14px 0 0 0;font-size:16px;line-height:26px;color:#4a5163;">
+                Hi, I came across {business_name} and put together a few homepage
+                designs for you - already built, not rough sketches.
+              </p>
+              <p style="margin:16px 0 0 0;font-size:16px;line-height:26px;color:#4a5163;">
+                Every design also comes with a <strong style="color:#1a2332;">free AI chatbot</strong>
+                built in - it answers your customers' questions around the clock, so you capture
+                leads even when you're closed.
+              </p>
+              <p style="margin:16px 0 0 0;font-size:16px;line-height:26px;color:#4a5163;">
+                Each one is mobile-friendly, quick to load, and ready to go live. If one catches
+                your eye, I'll build it out fully and set it up for you. If it's not for you,
+                no worries at all.
+              </p>
             </td>
           </tr>
 
-          <!-- Call To Action Button Section -->
+          <!-- Reply ask -->
           <tr>
-            <td class="content-padding" style="padding: 16px 40px 32px; background-color: #FFFFFF; text-align: center;">
-              
-              <!-- Sign off Text -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 0px;">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 16px; line-height: 24px; color: #64748B; font-weight: 500; text-align: center;">
-                      <strong style="color: #0F172A; font-weight: 700;">Best regards,</strong><br>
-                      Karamat Ali<br>
-                      Business Development Manager<br>
-                      muSharp
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td class="px" style="padding:22px 40px 0 40px;font-family:Helvetica,Arial,sans-serif;">
+              <p style="margin:0;font-size:16px;line-height:26px;color:#4a5163;">
+                Just reply with the one you like - even a
+                <strong style="color:#1a2332;">"Option 2 looks good"</strong> is enough to get started.
+              </p>
             </td>
           </tr>
 
-                    <!-- Minimalist Footer -->
+          <!-- Reply CTA (mailto) -->
           <tr>
-            <td class="content-padding" style="padding: 32px 40px; background-color: #F8FAFC; border-top: 1px solid #F1F5F9; text-align: center; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td align="center">
-                    
-                    <!-- Branding Link -->
-                    <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 14px; line-height: 22px; color: #475569; font-weight: 500; text-align: center; letter-spacing: -0.1px;">
-                      Designed &amp; Powered by <a href="https://musharp.com" target="_blank" style="color: #0284C7; text-decoration: underline; text-underline-offset: 3px; font-weight: 800; letter-spacing: 0.2px;">muSharp</a>
-                    </p>
-                    
-                    <!-- Tagline -->
-                    <p style="margin: 6px 0 0; font-family: 'Outfit', sans-serif; font-size: 12px; line-height: 18px; color: #94A3B8; text-align: center;">
-                      Crafting responsive digital experiences &amp; custom AI chat systems worldwide.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td align="center" style="padding:24px 40px 4px 40px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="mailto:waleed@musharp.net?subject=I%20like%20one%20of%20the%20designs" style="height:52px;v-text-anchor:middle;width:260px;" arcsize="16%" strokecolor="#4f46e5" fillcolor="#4f46e5">
+              <w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;">Reply with your pick</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="mailto:waleed@musharp.net?subject=I%20like%20one%20of%20the%20designs" target="_blank"
+                 style="display:inline-block;background:#4f46e5;color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none;padding:15px 34px;border-radius:8px;">
+                Reply with your pick
+              </a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <!-- Sign off -->
+          <tr>
+            <td class="px" style="padding:24px 40px 0 40px;font-family:Helvetica,Arial,sans-serif;">
+              <p style="margin:0;font-size:16px;line-height:24px;color:#1a2332;">Best Regards,</p>
+              <p style="margin:4px 0 0 0;font-size:16px;line-height:24px;color:#1a2332;font-weight:700;">Waleed Farrukh</p>
+              <p style="margin:2px 0 0 0;font-size:14px;line-height:22px;color:#4f46e5;">
+                <a href="https://musharp.com/" style="color:#4f46e5;text-decoration:none;">musharp.com</a> | <a href="tel:+14375238635" style="color:#4f46e5;text-decoration:none;">+1 (437) 523-8635</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="px" style="padding:26px 40px 30px 40px;">
+              <hr style="border:none;border-top:1px solid #eceef3;margin:0 0 16px 0;">
+              <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#aab0bf;">
+                You're getting this because I built something specific for {business_name}.
+                Reply <a href="mailto:waleed@musharp.net?subject=No%20thanks" style="color:#8a90a2;">"no thanks"</a> and I won't email again.
+              </p>
             </td>
           </tr>
 
@@ -365,4 +117,5 @@
   </table>
 </body>
 </html>
+
 

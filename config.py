@@ -46,13 +46,13 @@ NICHES = {
             {"name": "Modern Smile",  "url": "https://your-demo-host.example/dentist-2", "preview_image": "assets/dentist-2.png"},
             {"name": "Family Dental", "url": "https://your-demo-host.example/dentist-3", "preview_image": "assets/dentist-3.png"},
         ],
-        "email_subject": "A free website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a clean, "
-            "mobile-friendly website could help patients quickly find your services, timings, "
-            "location, and contact details.\n\n"
-            "I can build a professional website for your dental clinic for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for {niche} and made a quick demo for you: "
@@ -67,13 +67,13 @@ NICHES = {
             {"name": "Local Pipe Pros", "url": "https://your-demo-host.example/plumber-2", "preview_image": "assets/plumber-2.png"},
             {"name": "Emergency Plumber", "url": "https://your-demo-host.example/plumber-3", "preview_image": "assets/plumber-3.png"},
         ],
-        "email_subject": "A website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a fast, "
-            "mobile-friendly website could help customers call you quickly, request urgent "
-            "service, and see the areas you cover.\n\n"
-            "I can build a professional website for your plumbing business for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for plumbing businesses and made a quick demo: "
@@ -88,13 +88,13 @@ NICHES = {
             {"name": "Modern Medical Center", "url": "https://your-demo-host.example/hospital-2", "preview_image": "assets/hospital-2.png"},
             {"name": "City Health Clinic", "url": "https://your-demo-host.example/hospital-3", "preview_image": "assets/hospital-3.png"},
         ],
-        "email_subject": "A modern website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a clear, "
-            "professional website could help patients find departments, doctors, timings, "
-            "location, and appointment options more easily.\n\n"
-            "I can build a professional website for your hospital or clinic for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for hospitals and clinics. Here is a demo: "
@@ -109,13 +109,13 @@ NICHES = {
             {"name": "Family Care Residence", "url": "https://your-demo-host.example/care-home-2", "preview_image": "assets/care-home-2.png"},
             {"name": "Senior Living Home", "url": "https://your-demo-host.example/care-home-3", "preview_image": "assets/care-home-3.png"},
         ],
-        "email_subject": "A warm website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a calm, "
-            "trustworthy website could help families understand your care services, rooms, "
-            "visiting options, and how to arrange a visit.\n\n"
-            "I can build a professional website for your care home for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for care homes and senior living services. "
@@ -130,13 +130,13 @@ NICHES = {
             {"name": "QuickMeds Pharmacy", "url": "https://your-demo-host.example/pharmacy-2", "preview_image": "assets/pharmacy-2.png"},
             {"name": "HealthPlus Chemist", "url": "https://your-demo-host.example/pharmacy-3", "preview_image": "assets/pharmacy-3.png"},
         ],
-        "email_subject": "A website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a clean, "
-            "mobile-friendly website could help customers find opening hours, services, "
-            "prescription information, delivery options, and contact details quickly.\n\n"
-            "I can build a professional website for your pharmacy for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for pharmacies and made a quick demo: "
@@ -151,13 +151,13 @@ NICHES = {
             {"name": "Strength Club", "url": "https://your-demo-host.example/gym-2", "preview_image": "assets/gym-2.png"},
             {"name": "Wellness Gym", "url": "https://your-demo-host.example/gym-3", "preview_image": "assets/gym-3.png"},
         ],
-        "email_subject": "A website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a clean, "
-            "mobile-friendly website could help members find classes, trainers, pricing, "
-            "opening hours, location, and membership options quickly.\n\n"
-            "I can build a professional website for your gym or fitness studio for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for gyms and fitness studios. Here is a demo: "
@@ -172,13 +172,13 @@ NICHES = {
             {"name": "Modern Barber", "url": "https://your-demo-host.example/barber-2", "preview_image": "assets/barber-2.png"},
             {"name": "Classic Grooming", "url": "https://your-demo-host.example/barber-3", "preview_image": "assets/barber-3.png"},
         ],
-        "email_subject": "A website preview for {business_name}",
+        "email_subject": "A mobile-friendly website preview for {business_name}",
         "email_intro": (
-            "We came across ur business {business_name} and noticed that a clean, "
-            "mobile-friendly website could help customers view services, prices, opening "
-            "hours, location, and book appointments quickly.\n\n"
-            "I can build a professional website for your barber shop for $200. "
-            "I am also giving free chatbot services."
+            "Hi, I came across {business_name} and put together a few homepage designs "
+            "for you - already built, not rough sketches.\n\n"
+            "Every design also comes with a free AI chatbot built in, so customers can "
+            "get quick answers around the clock.\n\n"
+            "If one catches your eye, reply with the one you like and we can get started."
         ),
         "whatsapp_message": (
             "Hi {business_name}! I build websites for barber shops and grooming studios. "

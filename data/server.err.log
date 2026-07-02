@@ -2,92 +2,203 @@
  * Debugger is active!
  * Debugger PIN: 976-136-684
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
-127.0.0.1 - - [30/Jun/2026 16:24:00] "GET /health HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:37] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /static/musharp-logo.svg HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /static/styles.css HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:37] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_chatbot.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_seo.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_services.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:38] "GET /assets/dentist_location.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:25:39] "GET /favicon.ico HTTP/1.1" 404 -
-C:\Users\musharp\AppData\Roaming\Python\Python312\site-packages\werkzeug\sansio\response.py:235: UserWarning: The 'session' cookie is too large: the value was 4560 bytes but the header required 26 extra bytes. The final size was 4586 bytes but the limit is 4093 bytes. Browsers may silently ignore cookies larger than this.
+127.0.0.1 - - [01/Jul/2026 14:36:15] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:36:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:36:49] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:36:49] "GET /static/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:36:50] "GET /assets/data/email_images/dentists/Danstist%203.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:36:50] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:36:50] "GET /assets/dentist_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:36:51] "GET /assets/dentist_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:36:51] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:36:59] "GET /?niche=pharmacy HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:36:59] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:00] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:00] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:00] "GET /assets/pharmacy_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:00] "GET /assets/pharmacy_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:00] "GET /assets/pharmacy_location.png HTTP/1.1" 200 -
+C:\Users\musharp\AppData\Roaming\Python\Python312\site-packages\werkzeug\sansio\response.py:235: UserWarning: The 'session' cookie is too large: the value was 4576 bytes but the header required 26 extra bytes. The final size was 4602 bytes but the limit is 4093 bytes. Browsers may silently ignore cookies larger than this.
   dump_cookie(
-127.0.0.1 - - [30/Jun/2026 16:27:51] "POST /upload-image HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:27:52] "GET /assets/dentist_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /?niche=plumber HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/data/email_images/plumber/plumbing%202.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/plumbing_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:56] "GET /assets/plumbing_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:57] "GET /assets/plumbing_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:57] "GET /assets/plumbing_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /?niche=plumber HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /assets/data/email_images/plumber/plumbing%202.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:45:59] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 16:46:00] "GET /assets/plumbing_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:42] "GET /?niche=hospital HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:06:43] "GET /assets/hospital_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:08] "GET /?niche=dentists HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:09] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:10] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:36] "GET /?niche=barber HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:13:36] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_chatbot.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_seo.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_services.png HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:13:37] "GET /assets/barber_location.png HTTP/1.1" 200 -
- * Detected change in 'D:\\emailauto\\Automation\\tests\\test_core.py', reloading
+127.0.0.1 - - [01/Jul/2026 14:37:30] "POST /add-lead HTTP/1.1" 302 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /?niche=pharmacy&sheet=data%5Cleads_pharmacy.csv&uploaded=muSharp+added+manually HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /assets/pharmacy_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /assets/pharmacy_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:31] "GET /assets/pharmacy_services.png HTTP/1.1" 304 -
+C:\Users\musharp\AppData\Roaming\Python\Python312\site-packages\werkzeug\sansio\response.py:235: UserWarning: The 'session' cookie is too large: the value was 4595 bytes but the header required 26 extra bytes. The final size was 4621 bytes but the limit is 4093 bytes. Browsers may silently ignore cookies larger than this.
+  dump_cookie(
+127.0.0.1 - - [01/Jul/2026 14:37:39] "POST /upload-image HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /assets/pharmacy_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /assets/pharmacy_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:39] "GET /assets/pharmacy_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:52] "POST /upload-image HTTP/1.1" 302 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /?niche=pharmacy&sheet=data%5Cleads_pharmacy.csv&image=data%5Cemail_images%5Cpharmacy%5Cscreencapture-box2507-bluehost-2083-cpsess2500911650-frontend-jupiter-filemanager-index-html-2026-06-29-19_24_12-20260701-143752-1.png&image_uploaded=1+image HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /assets/data/email_images/pharmacy/screencapture-box2507-bluehost-2083-cpsess2500911650-frontend-jupiter-filemanager-index-html-2026-06-29-19_24_12-20260701-143752-1.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /assets/pharmacy_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /assets/pharmacy_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:37:53] "GET /assets/pharmacy_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "POST /run HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /assets/data/email_images/pharmacy/screencapture-box2507-bluehost-2083-cpsess2500911650-frontend-jupiter-filemanager-index-html-2026-06-29-19_24_12-20260701-143752-1.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /assets/pharmacy_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /assets/pharmacy_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 14:38:12] "GET /assets/pharmacy_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:35:26] "GET /?niche=barber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:27] "GET /assets/data/email_images/barber/barbe3.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:27] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:35:27] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:35:27] "GET /assets/barber_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:27] "GET /assets/barber_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:28] "GET /assets/barber_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:28] "GET /assets/barber_location.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:28] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [01/Jul/2026 15:35:39] "GET /?niche=care_homes HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:39] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:35:39] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:35:40] "GET /assets/care_homes_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:40] "GET /assets/care_homes_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:40] "GET /assets/care_homes_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:35:40] "GET /assets/care_homes_location.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:36:48] "GET /?niche=dentists HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:36:48] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:48] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:48] "GET /assets/data/email_images/dentists/Danstist%203.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:49] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:49] "GET /assets/dentist_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:49] "GET /assets/dentist_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:36:49] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:37:04] "GET /?niche=gym HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:37:04] "GET /assets/data/email_images/Gym/Gym1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:37:04] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:37:04] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:37:05] "GET /assets/gym_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:37:05] "GET /assets/gym_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:37:05] "GET /assets/gym_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:37:05] "GET /assets/gym_location.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:18] "GET /?niche=hospital HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:18] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:18] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:19] "GET /assets/data/email_images/hospital/hospital1.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:19] "GET /assets/hospital_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:19] "GET /assets/hospital_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:19] "GET /assets/hospital_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:19] "GET /assets/hospital_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /?niche=pharmacy HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /assets/data/email_images/pharmacy/screencapture-box2507-bluehost-2083-cpsess2500911650-frontend-jupiter-filemanager-index-html-2026-06-29-19_24_12-20260701-143752-1.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /assets/pharmacy_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /assets/pharmacy_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /assets/pharmacy_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:38:45] "GET /assets/pharmacy_location.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:39:44] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 15:39:44] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /assets/data/email_images/plumber/plumbing%201.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /assets/plumbing_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /assets/plumbing_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /assets/plumbing_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 15:39:45] "GET /assets/plumbing_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:47] "GET /?niche=barber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /assets/data/email_images/barber/barbe3.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /assets/barber_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /assets/barber_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:34:48] "GET /assets/barber_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:16] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:16] "GET /assets/barber_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:16] "GET /assets/barber_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:16] "GET /assets/barber_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:26] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:26] "GET /assets/barber_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:26] "GET /assets/barber_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 16:35:26] "GET /assets/barber_location.png HTTP/1.1" 304 -
+ * Detected change in 'D:\\emailauto\\Automation\\config.py', reloading
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 976-136-684
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
- * Detected change in 'D:\\emailauto\\Automation\\app.py', reloading
+ * Detected change in 'D:\\emailauto\\Automation\\config.py', reloading
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 976-136-684
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
- * Detected change in 'D:\\emailauto\\Automation\\app.py', reloading
+ * Detected change in 'D:\\emailauto\\Automation\\main.py', reloading
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 976-136-684
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
-127.0.0.1 - - [30/Jun/2026 17:42:22] "GET /?niche=barber HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:42:22] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:23] "GET /assets/barber_location.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:24] "GET /favicon.ico HTTP/1.1" 404 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /?niche=dentists HTTP/1.1" 200 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /static/styles.css HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/data/email_images/dentists/Danstist3.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_chatbot.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_seo.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_services.png HTTP/1.1" 304 -
-127.0.0.1 - - [30/Jun/2026 17:42:32] "GET /assets/dentist_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:29] "GET /?niche=barber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:12:29] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:29] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:29] "GET /assets/data/email_images/barber/barbe3.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:30] "GET /assets/barber_chatbot.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:30] "GET /assets/barber_services.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:30] "GET /assets/barber_location.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:12:30] "GET /assets/barber_seo.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:13:21] "GET /?niche=care_homes HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:13:22] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:13:22] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:13:22] "GET /assets/care_homes_chatbot.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:13:22] "GET /assets/care_homes_seo.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:13:22] "GET /assets/care_homes_services.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:13:23] "GET /assets/care_homes_location.png HTTP/1.1" 200 -
+ * Detected change in 'D:\\emailauto\\Automation\\config.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 976-136-684
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [01/Jul/2026 19:35:21] "GET /?niche=care_homes HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:35:21] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:35:21] "GET /assets/data/email_images/care_homes/childcare2-20260630-191730-2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:35:21] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:35:36] "GET /?niche=pharmacy HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:35:36] "GET /assets/data/email_images/pharmacy/plumbing_1-20260701-124448-2.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:35:36] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:35:36] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:36:06] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:36:06] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:36:06] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:36:06] "GET /assets/data/email_images/plumber/plumbing%201.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:42:28] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:42:29] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:42:29] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:42:29] "GET /assets/data/email_images/plumber/plumbing%201.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:43:59] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:44:00] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:44:00] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:44:00] "GET /assets/data/email_images/plumber/plumbing%201.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:46:13] "GET /?niche=plumber HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:46:13] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:46:13] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:46:13] "GET /assets/data/email_images/plumber/plumbing%201.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:47:25] "GET /?niche=pharmacy HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:47:26] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:47:26] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:47:26] "GET /assets/data/email_images/pharmacy/plumbing_1-20260701-124448-2.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:48:13] "POST /add-lead HTTP/1.1" 302 -
+127.0.0.1 - - [01/Jul/2026 19:48:13] "GET /?niche=pharmacy&sheet=data%5Cleads_pharmacy.csv&uploaded=Mahomood+Pharmacy+added+manually HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:48:13] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:48:13] "GET /assets/data/email_images/pharmacy/plumbing_1-20260701-124448-2.png HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:48:13] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:48:34] "GET /?niche=dentists HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:48:35] "GET /assets/data/email_images/dentists/screencapture-id-preview-945fe62d-c686-4276-b98f-10fe05f5b379-lovable-app-2026-06-23-17_29_28-20260624-182751-3.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:48:35] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:48:35] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:49:27] "POST /run HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jul/2026 19:49:27] "GET /static/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:49:27] "GET /static/musharp-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [01/Jul/2026 19:49:27] "GET /assets/data/email_images/dentists/screencapture-id-preview-945fe62d-c686-4276-b98f-10fe05f5b379-lovable-app-2026-06-23-17_29_28-20260624-182751-3.png HTTP/1.1" 304 -
